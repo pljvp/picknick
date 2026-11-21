@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Behoud onze picknicktafels en fietsen</title>
@@ -20,12 +20,12 @@
     --accent:#151515; --on-accent:#f5f4f0; --focus:#2b59c3; --bad:#b45309; --go:#1b7a3a; --on-go:#f5f4f0;
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/24px var(--sans); }
+  body { padding-left:env(safe-area-inset-left, 0px); padding-right:env(safe-area-inset-right, 0px); margin:0; background:var(--bg); color:var(--ink); font:16px/24px var(--sans); }
   .wrap { max-width:560px; margin:0 auto; }
   :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 
   /* Kop */
-  .bar { position:sticky; top:0; z-index:3; height:var(--header-h); background:var(--bg); }
+  .bar { position:sticky; top:0; z-index:3; height:calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top:env(safe-area-inset-top, 0px); background:var(--bg); }
   .bar .wrap { height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 16px; }
   .label { font:500 11px/16px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
   .icons { display:flex; }
@@ -33,7 +33,7 @@
   h1 { margin:0; padding:16px 16px 24px; font:600 28px/32px var(--sans); }
 
   /* Tabs */
-  .tabs { position:sticky; top:var(--header-h); z-index:2; background:var(--bg); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--line); }
+  .tabs { position:sticky; top:calc(var(--header-h) + env(safe-area-inset-top, 0px)); z-index:2; background:var(--bg); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--line); }
   .tabs button { height:var(--tab-h); min-width:0; padding:0; border:0; border-radius:0; background:none; color:var(--muted); font:600 clamp(12px,3.6vw,15px)/20px var(--sans); white-space:nowrap; cursor:pointer; }
   .tabs button[aria-selected=true] { color:var(--ink); box-shadow:inset 0 -2px 0 var(--accent); }
 
@@ -76,6 +76,7 @@
   .clip figcaption a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
   dialog.modal.reader { width:100%; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; flex-direction:column; }
   dialog.modal.reader[open] { display:flex; }
+  dialog.modal.reader .dhead { height:calc(56px + env(safe-area-inset-top, 0px)); padding-top:env(safe-area-inset-top, 0px); }
   .rscroll { flex:1; overflow:auto; background:var(--bg); -webkit-overflow-scrolling:touch; }
   .rscroll img { display:block; max-width:none; height:auto; background:#fff; }
   a.btn { text-decoration:none; }
@@ -97,7 +98,7 @@
   @media (prefers-reduced-motion:reduce) { .track { transition:none; } }
 
   /* Vaste knop onderaan: altijd zichtbaar, ook als de tekst langer is dan het scherm */
-  .cta { position:fixed; left:0; right:0; bottom:0; z-index:5; pointer-events:none; }
+  .cta { position:fixed; left:env(safe-area-inset-left, 0px); right:env(safe-area-inset-right, 0px); bottom:0; z-index:5; pointer-events:none; }
   .cta .wrap { padding:24px 16px calc(16px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg) 65%, transparent); }
   .cta .btn { width:100%; pointer-events:auto; }
 
@@ -415,7 +416,7 @@
     });
     $('track').style.transform = 'translateX(' + (-100 * tabs.indexOf(tab)) + '%)';
     if (!fromHash) { try { history.replaceState(null, '', '#' + tab.id.slice(2)); } catch {} }
-    const y = $('sentinel').offsetTop - 56;           // naar de tabbalk scrollen
+    const y = $('sentinel').offsetTop - document.querySelector('.bar').offsetHeight;           // naar de tabbalk scrollen
     if (window.scrollY > y) window.scrollTo(0, y);
   }
   tabs.forEach(x => x.addEventListener('click', () => show(x)));
