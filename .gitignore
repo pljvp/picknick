@@ -1,0 +1,14 @@
+# Persoonsgegevens en ruwe data: nooit in de repo
+keep_local*
+data_keep_local*
+docs/*.pdf
+*.eml
+*.csv
+*.mbox
+*.xlsx
+
+# Oude versies en rommel
+*_OLD.html
+*.bak
+.DS_Store
+Thumbs.db
