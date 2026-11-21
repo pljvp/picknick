@@ -42,6 +42,7 @@
   .panel[hidden] { display:none; }
   .story { margin:0 0 16px; font:400 16px/24px var(--sans); }
   .story:last-child { margin-bottom:0; }
+  .story a { color:var(--ink); text-decoration:underline; }
   .item { display:grid; grid-template-columns:2.25em 1fr; gap:8px; margin:0 0 16px; }
   .num { padding-top:2px; font:400 13px/20px var(--mono); color:var(--muted); font-variant-numeric:tabular-nums; }
   .item a { color:var(--ink); text-decoration:underline; }
@@ -146,7 +147,7 @@
   </div>
 
   <section class="panel" id="p-oproep" role="tabpanel" aria-labelledby="t-oproep">
-    <p class="story" data-i18n="call1"></p>
+    <p class="story"><span data-i18n="call1a"></span><a href="https://leidse-regio.nl/bezwaren" target="_blank" rel="noopener noreferrer" data-i18n="call1_link"></a><span data-i18n="call1b"></span></p>
     <figure class="clip">
       <div class="clipimg"><img src="img/loman_leefmans_leids_dagblad.jpeg" data-alt="clip_alt" alt=""></div>
       <button type="button" class="icon clipbtn" id="ropen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -163,7 +164,7 @@
     <p class="item"><span class="num">F3</span><span data-i18n="fact2"></span></p>
     <p class="item"><span class="num">F4</span><span data-i18n="factO"></span></p>
     <p class="item"><span class="num">F5</span><span><span data-i18n="fact3"></span> <a href="docs/Groenoordstraat_reacties%20samengevoegd_260830_2139.pdf" target="_blank" rel="noopener" data-i18n="fact3_link"></a></span></p>
-    <p class="item"><span class="num">F6</span><span><a href="https://leidse-regio.nl/bezwaren" target="_blank" rel="noopener noreferrer" data-i18n="fact4"></a></span></p>
+    <p class="item"><span class="num">F6</span><span><span data-i18n="fact4a"></span><a href="https://leidse-regio.nl/bezwaren" target="_blank" rel="noopener noreferrer" data-i18n="fact4_link"></a><span data-i18n="fact4b"></span></span></p>
     <p class="item"><span class="num">F7</span><span data-i18n="fact5"></span></p>
     <p class="item"><span class="num">F8</span><span data-i18n="fact6"></span></p>
     <p class="item"><span class="num">F9</span><span data-i18n="fact7"></span></p>
@@ -287,7 +288,7 @@
     nl: {
       title: 'Behoud onze picknicktafels en fietsen', clip_alt: 'Krantenartikel in het Leids Dagblad: Picknicktafels en rekken blijven illegaal', clip_open: 'Bekijk het artikel', zoom_in: 'Inzoomen', zoom_out: 'Uitzoomen', tools_title: 'Hulpmiddelen', tool_survey: 'Enquête', tool_survey_merge: 'Enquête samenvoegen', tool_sig_merge: 'Handtekeningen samenvoegen', tool_flyer: 'Flyer (PDF)', head: 'Petitie', cta: 'Teken mee', close: 'Sluiten', mail_hello: 'Bedankt voor je handtekening! Verstuur dit bericht zoals het is: de code onderaan is je getekende paraaf.', sig_clear: 'Paraaf opnieuw', lang_to: 'Switch to English', theme: 'Licht of donker',
       tab_call: '1. Oproep', tab_facts: '2. Feiten', tab_request: '3. Verzoek', tab_privacy: 'Privacy',
-      call1: 'Vrijdag de 20e was eindelijk de hoorzitting over de parkeerplaatsen, picknicktafels en fietsen in onze straat. De commissie stond open voor ons verhaal, maar kan de gemeente alleen adviseren.',
+      call1a: 'Vrijdag de 20e was eindelijk de hoorzitting over de parkeerplaatsen, picknicktafels en fietsen in onze straat. ', call1_link: 'De commissie', call1b: ' stond open voor ons verhaal, maar kan de gemeente alleen adviseren.',
       call2: 'De commissie vroeg met klem om een handtekeningenlijst. Met naam, adres en paraaf laten we zien dat we hier gezamenlijk een oplossing voor willen, en dat het niet alleen gaat om een paar bewoners die de commissie toespraken.',
       scope: 'Wij spreken namens de straat, uitsluitend over de belangen van de picknicktafels en fietsenrekken. Dat doen bewoners van Groenoordstraat 14 en Groenoordstraat 0 (Haarlemmerweg 42H). Over niets anders vertegenwoordigen wij jou.',
       scope_label: 'Alleen dit onderwerp', scope_dlg: 'Je handtekening gaat uitsluitend over de belangen van de picknicktafels en fietsenrekken in de parkeervakken. Over niets anders spreken wij namens jou.',
@@ -297,7 +298,7 @@
       fact2: 'Fietsparkeren in de voorste parkeervakken werd verboden.',
       factO: 'Enkele bewoners van Groenoordstraat 14 en Haarlemmerweg 42H maakten officieel bezwaar bij de gemeente (zaaknummer 1.2026.0666).',
       fact3: 'We haalden jullie mening op in een enquête.', fact3_link: 'Bekijk de resultaten (pdf)',
-      fact4: 'De gemeente sloeg mediation over: direct een hoorzitting.',
+      fact4a: 'De gemeente sloeg mediation over: direct ', fact4_link: 'een hoorzitting', fact4b: '.',
       fact5: 'De gemeente stelt dat er niet geparkeerd kan worden in een parkeervak met picknicktafel.',
       fact6: 'De gemeente stelt dat als er fietsen in de weg staan, bewoners gewoon de handhaving kunnen bellen.',
       fact7: 'Er lijkt ruimte voor een oplossing: we hebben jullie handtekeningen nodig.',
@@ -327,7 +328,7 @@
     en: {
       title: 'Keep our picnic tables and bikes', clip_alt: 'Newspaper article in the Leids Dagblad: Picnic tables and racks remain illegal', clip_open: 'View the article', zoom_in: 'Zoom in', zoom_out: 'Zoom out', tools_title: 'Tools', tool_survey: 'Survey', tool_survey_merge: 'Merge survey responses', tool_sig_merge: 'Merge signatures', tool_flyer: 'Flyer (PDF)', head: 'Petition', cta: 'Sign with us', close: 'Close', mail_hello: 'Thank you for signing! Please send this message as it is: the code at the bottom is your drawn signature.', sig_clear: 'Redo signature', lang_to: 'Wissel naar Nederlands', theme: 'Light or dark',
       tab_call: '1. Petition', tab_facts: '2. Facts', tab_request: '3. Request', tab_privacy: 'Privacy',
-      call1: 'On Friday the 20th the hearing about the parking spaces, picnic tables and bikes in our street finally took place. The committee was open to our side of the story, but can only advise the municipality.',
+      call1a: 'On Friday the 20th the hearing about the parking spaces, picnic tables and bikes in our street finally took place. ', call1_link: 'The committee', call1b: ' was open to our side of the story, but can only advise the municipality.',
       call2: 'The committee urgently asked for a list of signatures. With name, address and signature we show that we want a solution together, and that this is not just a few residents who addressed the committee.',
       scope: 'We speak on behalf of the street, solely about the interests of the picnic tables and bike racks. This is done by residents of Groenoordstraat 14 and Groenoordstraat 0 (Haarlemmerweg 42H). On nothing else do we represent you.',
       scope_label: 'This issue only', scope_dlg: 'Your signature is solely about the interests of the picnic tables and bike racks in the parking spaces. We speak on your behalf on nothing else.',
@@ -337,7 +338,7 @@
       fact2: 'Bike parking in the front spaces was banned.',
       factO: 'Some residents of Groenoordstraat 14 and Haarlemmerweg 42H filed an official objection with the municipality (case number 1.2026.0666).',
       fact3: 'We surveyed your opinions.', fact3_link: 'View the results (pdf)',
-      fact4: 'The municipality skipped mediation, going straight to a hearing.',
+      fact4a: 'The municipality skipped mediation, going straight ', fact4_link: 'to a hearing', fact4b: '.',
       fact5: 'The municipality states that parking is not possible in a parking space with a picnic table.',
       fact6: 'The municipality states that if bikes are in the way, residents can simply call enforcement.',
       fact7: 'There seems room for a solution: we need your signatures.',
