@@ -41,7 +41,9 @@
   td.sig { width:170px; }
   td.sig img { display:block; width:150px; height:auto; background:#fff; border-radius:var(--radius); }
   td.miss { color:var(--bad); font-size:13px; }
-  .printrow { margin-top:24px; }
+  .printrow { margin-top:24px; display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .opt { display:flex; align-items:center; gap:10px; font:400 14px/20px var(--sans); cursor:pointer; }
+  .opt input { width:20px; height:20px; margin:0; accent-color:var(--accent); }
 
   @media print {
     :root, :root[data-theme=light] { --bg:#fff; --ink:#000; --muted:#555; --line:#bbb; --surface:#fff; }
@@ -99,7 +101,7 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <div class="printrow noprint"><button type="button" class="btn primary" id="print" style="padding:0 20px">Print of bewaar als pdf</button></div>
+    <div class="printrow noprint"><button type="button" class="btn primary" id="print" style="padding:0 20px">Print of bewaar als pdf</button><label class="opt"><input type="checkbox" id="legible" checked>Handtekeningen tonen (uit: onherstelbaar vervaagd)</label></div>
   </div>
 </div>
 
@@ -176,6 +178,67 @@
   const coll = new Intl.Collator('nl', { numeric: true, sensitivity: 'base' });
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
+  // Zonder vinkje wordt de echte paraaf niet getoond of geprint. In plaats daarvan komt er een onherstelbaar vervaagde versie:
+  // 1) de tekening wordt teruggebracht tot een rooster van COLS x ROWS vlakjes (gemiddelde inkt per vlakje: de details zijn weg,
+  //    dit is geen omkeerbare Gaussische blur maar echt informatieverlies),
+  // 2) er komt per vlakje ruis bij en het resultaat wordt op weinig grijstinten afgerond,
+  // 3) het wordt zacht opgeschaald tot een plaatje. Alleen dat plaatje gaat de pdf in, nooit het origineel.
+  const BLUR = { cols: 10, levels: 6, gain: 4, noise: 0.6 };
+  const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  function obscure(src) {
+    return new Promise(resolve => {
+      const im = new Image();
+      im.onerror = () => resolve(BLANK);
+      im.onload = () => {
+        const W = 300;
+        const vb = /viewBox='0 0 300 (\d{1,4})'/.exec(decodeURIComponent(src.slice(src.indexOf(',') + 1)));
+        const H = vb ? +vb[1] : Math.max(20, Math.round(W * im.naturalHeight / Math.max(1, im.naturalWidth)));
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(im, 0, 0, W, H);
+        const px = x.getImageData(0, 0, W, H).data;
+        const cols = BLUR.cols, rows = Math.max(2, Math.round(cols * H / W));
+        const cw = W / cols, ch = H / rows, cell = new Float32Array(cols * rows);
+        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+          let sum = 0, n = 0;
+          for (let yy = Math.floor(j * ch); yy < Math.min(H, Math.floor((j + 1) * ch)); yy++)
+            for (let xx = Math.floor(i * cw); xx < Math.min(W, Math.floor((i + 1) * cw)); xx++) { sum += 255 - px[(yy * W + xx) * 4]; n++; }
+          let v = n ? sum / n / 255 * BLUR.gain : 0;                   // inkt per vlakje, versterkt
+          v += (Math.random() - 0.5) * BLUR.noise / BLUR.levels;       // ruis
+          v = Math.min(1, Math.max(0, v));
+          cell[j * cols + i] = Math.round(v * (BLUR.levels - 1)) / (BLUR.levels - 1);   // weinig grijstinten
+        }
+        const sm = new Float32Array(cols * rows);                         // extra uitsmeren over buurvlakjes (1-2-1), nog meer informatieverlies
+        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+          let acc = 0, wsum = 0;
+          for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+            const jj = j + dj, ii = i + di; if (jj < 0 || jj >= rows || ii < 0 || ii >= cols) continue;
+            const w = (2 - Math.abs(dj)) * (2 - Math.abs(di)); acc += w * cell[jj * cols + ii]; wsum += w;
+          }
+          sm[j * cols + i] = acc / wsum;
+        }
+        for (let k = 0; k < cols * rows; k++) cell[k] = sm[k];
+        const t = document.createElement('canvas'); t.width = cols; t.height = rows;
+        const tx = t.getContext('2d'), id = tx.createImageData(cols, rows);
+        for (let k = 0; k < cols * rows; k++) { const g = Math.round(255 - cell[k] * 200); id.data[k * 4] = id.data[k * 4 + 1] = id.data[k * 4 + 2] = g; id.data[k * 4 + 3] = 255; }
+        tx.putImageData(id, 0, 0);
+        const o = document.createElement('canvas'); o.width = W; o.height = H;
+        const ox = o.getContext('2d'); ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+        ox.fillStyle = '#fff'; ox.fillRect(0, 0, W, H); ox.drawImage(t, 0, 0, W, H);
+        resolve(o.toDataURL('image/png'));
+      };
+      im.src = src;
+    });
+  }
+  function showSigs() {
+    const show = $('legible').checked;
+    document.querySelectorAll('td.sig img').forEach(img => {
+      if (show) { img.src = img.dataset.src; return; }
+      img.src = BLANK;                                                  // nooit het origineel laten staan terwijl het vervaagt
+      obscure(img.dataset.src).then(u => { if (!$('legible').checked) img.src = u; });
+    });
+  }
+
   function run() {
     const all = parse($('in').value);
     const list = all;
@@ -188,7 +251,7 @@
       const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.appendChild(td); return td; };
       cell(String(i + 1), 'n'); cell(e.name); cell(e.address);
       const sg = cell('', 'sig');
-      if (e.sig) { const img = document.createElement('img'); img.src = e.sig; img.alt = 'Handtekening van ' + e.name; sg.appendChild(img); }
+      if (e.sig) { const img = document.createElement('img'); img.src = e.sig; img.alt = 'Handtekening van ' + e.name; img.dataset.src = e.sig; sg.appendChild(img); }
       else { sg.className = 'sig miss'; sg.textContent = 'paraaf niet leesbaar'; nosig++; }
       cell(e.note);
       rows.appendChild(tr);
@@ -200,11 +263,13 @@
     if (nosig) w.push(plural(nosig, 'paraaf', 'paraafs') + ' niet leesbaar: controleer de mail zelf.');
     if (!list.length) w.push('Geen handtekeningen gevonden. Elke mail begint met "Naam:" of "Name:".');
     $('warn').textContent = w.join(' ');
+    showSigs();
     $('out').hidden = false;
   }
 
   $('go').addEventListener('click', run);
   $('clear').addEventListener('click', () => { $('in').value = ''; $('out').hidden = true; $('in').focus(); });
+  $('legible').addEventListener('change', showSigs);
   $('print').addEventListener('click', () => window.print());
 })();
 </script>
