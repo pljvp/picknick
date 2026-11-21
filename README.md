@@ -36,7 +36,7 @@ Beide pagina's sturen niets naar een server. Ze openen het e-mailprogramma van d
 1. De bezoeker vult naam, straat (vooraf ingevuld), huisnummer en eventueel een opmerking in, en tekent een paraaf.
 2. De pagina valideert de verplichte velden en opent het e-mailprogramma met het bericht, in de taal van de bezoeker (NL of EN). Daarna volgt een bedankscherm met een deellink.
 3. De organisatoren plakken de mails in `tools/handtekeningen-samenvoegen.html`. Dat levert een lijst op, gesorteerd op adres. De tool leest zowel Nederlandse als Engelse veldnamen.
-4. De pagina waarschuwt dat het namaken van een handtekening strafbaar is (art. 225 Wetboek van Strafrecht).
+4. De pagina waarschuwt voor misbruik (zie Privacy).
 
 ### Paraaf → code → paraaf
 
@@ -53,6 +53,7 @@ Een tekening in een e-mail zou groot en kwetsbaar zijn, dus de paraaf gaat als k
 
 - Naam, adres, paraaf en enquêtereacties worden per e-mail verzameld en alleen gedeeld met de hoorzittingscommissie. Zo staat het ook op de petitiepagina.
 - Ruwe data, ontvangen mails en pdf's met namen horen niet in deze repo. De `.gitignore` sluit `keep_local*`, `data_keep_local*`, `docs/*.pdf`, `*.csv`, `*.eml`, `*.mbox` en `*.xlsx` uit.
+- Misbruik is strafbaar: een handtekening namaken, namens een ander tekenen of andermans gegevens invullen is valsheid in geschrifte (art. 225 Wetboek van Strafrecht). De petitiepagina waarschuwt hiervoor in het formulier en op het tabblad Privacy. De paraaf is een bewijs van betrokkenheid, geen juridisch sluitende handtekening.
 - Controleer vóór elke commit met `git status --short` dat er geen persoonsgegevens tussen staan.
 
 ## Beveiliging
