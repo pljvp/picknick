@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Behoud onze picknicktafels en fietsen</title>
+<style>
+  :root {
+    --bg:#111112; --surface:#1c1c1e; --line:#2a2a2c; --ink:#f1f1ee; --muted:#9b9b97;
+    --accent:#f1f1ee; --on-accent:#111112; --focus:#9ab8ff; --bad:#ffb454; --go:#5cc47c; --on-go:#0c1a10;
+    --sans:system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --radius:2px; --header-h:56px; --tab-h:44px;
+  }
+  :root[data-theme=light] {
+    --bg:#f5f4f0; --surface:#eae9e4; --line:#d9d8d2; --ink:#151515; --muted:#66665f;
+    --accent:#151515; --on-accent:#f5f4f0; --focus:#2b59c3; --bad:#b45309; --go:#1b7a3a; --on-go:#f5f4f0;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/24px var(--sans); }
+  .wrap { max-width:560px; margin:0 auto; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+
+  /* Kop */
+  .bar { position:sticky; top:0; z-index:3; height:var(--header-h); background:var(--bg); }
+  .bar .wrap { height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 16px; }
+  .label { font:500 11px/16px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .icons { display:flex; }
+  .icon { width:44px; height:44px; padding:0; border:0; border-radius:var(--radius); background:transparent; color:var(--ink); font:22px/1 var(--sans); cursor:pointer; display:grid; place-items:center; }
+  h1 { margin:0; padding:16px 16px 24px; font:600 28px/32px var(--sans); }
+
+  /* Tabs */
+  .tabs { position:sticky; top:var(--header-h); z-index:2; background:var(--bg); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--line); }
+  .tabs button { height:var(--tab-h); min-width:0; padding:0; border:0; border-radius:0; background:none; color:var(--muted); font:600 clamp(12px,3.6vw,15px)/20px var(--sans); white-space:nowrap; cursor:pointer; }
+  .tabs button[aria-selected=true] { color:var(--ink); box-shadow:inset 0 -2px 0 var(--accent); }
+
+  /* Inhoud */
+  .panel { padding:24px 16px 120px; }
+  .panel[hidden] { display:none; }
+  .story { margin:0 0 16px; font:400 18px/28px var(--serif); }
+  .story:last-child { margin-bottom:0; }
+  .item { display:grid; grid-template-columns:2.25em 1fr; gap:8px; margin:0 0 16px; }
+  .num { padding-top:2px; font:400 13px/20px var(--mono); color:var(--muted); font-variant-numeric:tabular-nums; }
+  .item a { color:var(--ink); text-decoration:underline; }
+  .plain { margin:0; }
+
+  /* Formulier */
+  .intro { margin:0 0 24px; }
+  .field { margin:0 0 24px; }
+  .addr { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:12px; }
+  .field .label { display:block; margin:0 0 8px; }
+  .hint { margin:4px 0 0; font:400 13px/18px var(--sans); color:var(--muted); }
+  input[type=text], textarea { display:block; width:100%; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:16px/24px var(--sans); }
+  input[type=text] { height:44px; padding:0 12px; }
+  textarea { min-height:88px; padding:10px 12px; resize:vertical; }
+  .pad { position:relative; background:var(--surface); border-radius:var(--radius); }
+  canvas { display:block; width:100%; height:160px; touch-action:none; }
+  .pad .draw { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); pointer-events:none; }
+  .padx { position:absolute; top:0; right:0; color:var(--muted); }
+  .invalid { box-shadow:inset 0 -2px 0 var(--bad); }
+  .msg { min-height:18px; margin:0 0 16px; font:400 13px/18px var(--sans); color:var(--muted); }
+  .msg.err { color:var(--bad); }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 10px; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:600 15px/20px var(--sans); white-space:nowrap; cursor:pointer; }
+  .clip { position:relative; margin:0 0 20px; }
+  .clipimg { height:200px; overflow:hidden; background:var(--surface); border-radius:var(--radius); }
+  .clipimg img { display:block; width:100%; height:auto; filter:contrast(1.04) brightness(.88); }
+  :root[data-theme=light] .clipimg img { filter:contrast(1.04) brightness(.98); }
+  .clipbtn { position:absolute; top:4px; right:4px; background:var(--bg); opacity:.92; }
+  .clip figcaption { margin-top:8px; }
+  .clip figcaption a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
+  dialog.modal.reader { width:100%; max-width:none; height:100dvh; max-height:none; margin:0; border-radius:0; flex-direction:column; }
+  dialog.modal.reader[open] { display:flex; }
+  .rscroll { flex:1; overflow:auto; background:var(--bg); -webkit-overflow-scrolling:touch; }
+  .rscroll img { display:block; max-width:none; height:auto; background:#fff; }
+  a.btn { text-decoration:none; }
+  .scopebox { margin:0 0 24px; }
+  .scopebox p { margin:4px 0 0; font-size:15px; line-height:22px; }
+  .btn.primary { background:var(--accent); color:var(--on-accent); }
+  .btn.go { background:var(--go); color:var(--on-go); }
+  .linkbtn { display:block; margin:12px 0 0; padding:8px 0; border:0; background:none; color:var(--muted); font:400 13px/18px var(--sans); text-decoration:underline; text-align:left; cursor:pointer; }
+  /* Beeld onder de titel: altijd dezelfde maat, schuift mee met de tab */
+  .hero { position:relative; aspect-ratio:579/274; overflow:hidden; background:var(--surface); }
+  /* Eén kleurwaas over alle beelden, met een verloop naar de achtergrond onderaan */
+  .hero::before { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:#5a7186; mix-blend-mode:color; opacity:.55; }
+  .hero::after { content:""; position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(to top, var(--bg) 0, transparent 38%); }
+  .track { display:flex; height:100%; transition:transform .35s ease-out; }
+  .slide { flex:0 0 100%; height:100%; background:var(--surface); }
+  .slide img { display:block; width:100%; height:100%; object-fit:cover; filter:contrast(1.04) brightness(.88); }
+  :root[data-theme=light] .slide img { filter:contrast(1.04) brightness(.98); }
+  .slide img.err { visibility:hidden; }
+  @media (prefers-reduced-motion:reduce) { .track { transition:none; } }
+
+  /* Vaste knop onderaan: altijd zichtbaar, ook als de tekst langer is dan het scherm */
+  .cta { position:fixed; left:0; right:0; bottom:0; z-index:5; pointer-events:none; }
+  .cta .wrap { padding:24px 16px calc(16px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg) 65%, transparent); }
+  .cta .btn { width:100%; pointer-events:auto; }
+
+  /* Formulier in een gecentreerd venster */
+  dialog.modal { width:calc(100% - 32px); max-width:480px; max-height:calc(100dvh - 32px); margin:auto; padding:0; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); overflow:auto; }
+  dialog.modal::backdrop { background:rgba(0,0,0,.6); }
+  .dhead { position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; height:56px; padding:0 4px 0 16px; background:var(--surface); }
+  .dhead .icon { margin:0; color:var(--ink); }
+  .dbody { padding:0 16px 16px; }
+  .boom { margin:0 0 8px; line-height:0; }
+  .boom img { display:block; width:96px; height:auto; }
+  .stack { display:grid; gap:12px; }
+  .ghl { margin:16px 0 0; font:400 13px/18px var(--sans); }
+  .ghl a { display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; }
+  .ghl a:hover span { text-decoration:underline; }
+  .modal input[type=text], .modal textarea, .modal .pad, .modal .btn:not(.primary) { background:var(--bg); }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <span class="label" data-i18n="head"></span>
+    <div class="icons">
+      <button type="button" class="icon" id="tools"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button type="button" class="icon" id="lang"></button>
+      <button type="button" class="icon" id="theme" aria-label="Licht of donker"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1 data-i18n="title"></h1>
+  <div class="hero">
+    <div class="track" id="track">
+      <div class="slide"><img src="img/beeld-oproep.jpg" data-alt="alt1" alt=""></div>
+      <div class="slide"><img src="img/beeld-feiten.jpg" data-alt="alt2" alt=""></div>
+      <div class="slide"><img src="img/beeld-verzoek.jpg" data-alt="alt3" alt=""></div>
+      <div class="slide"><img src="img/beeld-privacy.jpg" data-alt="alt4" alt=""></div>
+    </div>
+  </div>
+  <div id="sentinel"></div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-oproep" aria-controls="p-oproep" aria-selected="true" data-i18n="tab_call"></button>
+    <button role="tab" id="t-feiten" aria-controls="p-feiten" aria-selected="false" data-i18n="tab_facts"></button>
+    <button role="tab" id="t-verzoek" aria-controls="p-verzoek" aria-selected="false" data-i18n="tab_request"></button>
+    <button role="tab" id="t-privacy" aria-controls="p-privacy" aria-selected="false" data-i18n="tab_privacy"></button>
+  </div>
+
+  <section class="panel" id="p-oproep" role="tabpanel" aria-labelledby="t-oproep">
+    <p class="story" data-i18n="call1"></p>
+    <figure class="clip">
+      <div class="clipimg"><img src="img/loman_leefmans_leids_dagblad.jpeg" data-alt="clip_alt" alt=""></div>
+      <button type="button" class="icon clipbtn" id="ropen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <figcaption class="label">Leids Dagblad · <a href="https://www.linkedin.com/in/loman-leefmans-45a8b417/" target="_blank" rel="noopener noreferrer">Loman Leefmans</a></figcaption>
+    </figure>
+    <p class="story" data-i18n="call2"></p>
+    <p class="story" data-i18n="scope"></p>
+    <p class="story" data-i18n="call3"></p>
+  </section>
+
+  <section class="panel" id="p-feiten" role="tabpanel" aria-labelledby="t-feiten" hidden>
+    <p class="item"><span class="num">F1</span><span data-i18n="fact0"></span></p>
+    <p class="item"><span class="num">F2</span><span data-i18n="fact1"></span></p>
+    <p class="item"><span class="num">F3</span><span data-i18n="fact2"></span></p>
+    <p class="item"><span class="num">F4</span><span data-i18n="factO"></span></p>
+    <p class="item"><span class="num">F5</span><span><span data-i18n="fact3"></span> <a href="docs/Groenoordstraat_reacties%20samengevoegd_260830_2139.pdf" target="_blank" rel="noopener" data-i18n="fact3_link"></a></span></p>
+    <p class="item"><span class="num">F6</span><span><a href="https://leidse-regio.nl/bezwaren" target="_blank" rel="noopener noreferrer" data-i18n="fact4"></a></span></p>
+    <p class="item"><span class="num">F7</span><span data-i18n="fact5"></span></p>
+    <p class="item"><span class="num">F8</span><span data-i18n="fact6"></span></p>
+    <p class="item"><span class="num">F9</span><span data-i18n="fact7"></span></p>
+  </section>
+
+  <section class="panel" id="p-verzoek" role="tabpanel" aria-labelledby="t-verzoek" hidden>
+    <p class="item"><span class="num">V1</span><span data-i18n="req1"></span></p>
+    <p class="item"><span class="num">V2</span><span data-i18n="req2"></span></p>
+    <p class="item"><span class="num">V3</span><span data-i18n="req3"></span></p>
+    <p class="item"><span class="num">V4</span><span data-i18n="req4"></span></p>
+  </section>
+
+  <section class="panel" id="p-privacy" role="tabpanel" aria-labelledby="t-privacy" hidden>
+    <p class="plain" data-i18n="privacy_text"></p>
+  </section>
+</div>
+
+<dialog id="dlg" class="modal" aria-labelledby="dtitle">
+  <div class="dhead">
+    <span class="label" id="dtitle" data-i18n="cta"></span>
+    <button type="button" class="icon" id="dclose"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+  </div>
+  <div class="dbody">
+    <p class="intro" data-i18n="sign_text"></p>
+    <div class="scopebox"><span class="label" data-i18n="scope_label"></span><p data-i18n="scope_dlg"></p></div>
+    <form id="form" autocomplete="off" novalidate>
+      <div class="field">
+        <label class="label" for="name" data-i18n="name"></label>
+        <input type="text" id="name" maxlength="256">
+      </div>
+      <div class="addr">
+        <div class="field">
+          <label class="label" for="street" data-i18n="street"></label>
+          <input type="text" id="street" maxlength="256" autocapitalize="words">
+        </div>
+        <div class="field">
+          <label class="label" for="housenr" data-i18n="housenr"></label>
+          <input type="text" id="housenr" maxlength="20" autocapitalize="characters">
+        </div>
+      </div>
+      <div class="field">
+        <span class="label" data-i18n="signature"></span>
+        <div class="pad" id="padbox">
+          <canvas id="pad"></canvas>
+          <div class="draw" id="hint" data-i18n="draw"></div>
+          <button type="button" class="icon padx" id="clearsig" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="note" data-i18n="note"></label>
+        <textarea id="note" maxlength="256"></textarea>
+        <p class="hint" data-i18n="note_hint"></p>
+      </div>
+
+      <p class="hint" data-i18n="legal"></p>
+      <p class="msg" id="msg" role="alert"></p>
+      <div class="row">
+        <button type="button" class="btn" id="clear"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="clear"></span></button>
+        <button type="submit" class="btn primary go" id="submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span data-i18n="submit"></span></button>
+      </div>
+      <button type="button" class="linkbtn" id="copy" data-i18n="copy"></button>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="rdlg" class="modal reader" aria-labelledby="rtitle">
+  <div class="dhead">
+    <span class="label" id="rtitle">Leids Dagblad</span>
+    <div class="icons">
+      <button type="button" class="icon" id="rminus"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button type="button" class="icon" id="rplus"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button type="button" class="icon" id="rclose"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+    </div>
+  </div>
+  <div class="rscroll" id="rscroll" tabindex="0"><img id="rimg" src="img/loman_leefmans_leids_dagblad.jpeg" data-alt="clip_alt" alt=""></div>
+</dialog>
+<dialog id="kdlg" class="modal" aria-labelledby="ktitle">
+  <div class="dhead">
+    <span class="label" id="ktitle" data-i18n="tools_title"></span>
+    <button type="button" class="icon" id="kclose"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+  </div>
+  <div class="dbody">
+    <div class="stack">
+      <a class="btn" href="index.html" data-i18n="tool_survey"></a>
+      <a class="btn" href="tools/enquete-samenvoegen.html" data-i18n="tool_survey_merge"></a>
+      <a class="btn" href="docs/Flyer%20handtekeningen%20Groenoordstraat%20A4%20NL%20EN.pdf" target="_blank" rel="noopener" data-i18n="tool_flyer"></a>
+      <a class="btn" href="tools/handtekeningen-samenvoegen.html" data-i18n="tool_sig_merge"></a>
+    </div>
+    <p class="ghl"><a href="https://github.com/pljvp/picknick" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg><span>github.com/pljvp/picknick</span></a></p>
+  </div>
+</dialog>
+<dialog id="thx" class="modal" aria-labelledby="ttitle">
+  <div class="dhead">
+    <span class="label" id="ttitle" data-i18n="thx_title"></span>
+    <button type="button" class="icon" id="tclose"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+  </div>
+  <div class="dbody">
+    <p class="boom"><img src="img/hart-leiden.svg" alt="" width="96" height="87"></p>
+    <p class="intro" data-i18n="thx_text"></p>
+    <p class="intro" data-i18n="thx_more"></p>
+    <p class="msg" id="tmsg" role="status"></p>
+    <div class="stack">
+      <button type="button" class="btn primary" id="share"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg><span data-i18n="thx_share"></span></button>
+      <button type="button" class="btn" id="tclose2" data-i18n="close"></button>
+    </div>
+  </div>
+</dialog>
+
+<div class="cta">
+  <div class="wrap">
+    <button type="button" class="btn primary go" id="open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span data-i18n="cta"></span></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // De ingevulde gegevens worden via de mail-app van de bezoeker naar dit adres gestuurd (mailto).
+  const MAIL_TO = 'picknick@wereldopener.nl';
+
+  const T = {
+    nl: {
+      title: 'Behoud onze picknicktafels en fietsen', clip_alt: 'Krantenartikel in het Leids Dagblad: Picknicktafels en rekken blijven illegaal', clip_open: 'Bekijk het artikel', zoom_in: 'Inzoomen', zoom_out: 'Uitzoomen', tools_title: 'Hulpmiddelen', tool_survey: 'Enquête', tool_survey_merge: 'Enquête samenvoegen', tool_sig_merge: 'Handtekeningen samenvoegen', tool_flyer: 'Flyer (PDF)', head: 'Petitie', cta: 'Teken mee', close: 'Sluiten', mail_hello: 'Bedankt voor je handtekening! Verstuur dit bericht zoals het is: de code onderaan is je getekende paraaf.', sig_clear: 'Paraaf opnieuw', lang_to: 'Switch to English', theme: 'Licht of donker',
+      tab_call: '1. Oproep', tab_facts: '2. Feiten', tab_request: '3. Verzoek', tab_privacy: 'Privacy',
+      call1: 'Vrijdag de 20e was eindelijk de hoorzitting over de parkeerplaatsen, picknicktafels en fietsen in onze straat. De commissie stond open voor ons verhaal, maar kan de gemeente alleen adviseren.',
+      call2: 'De commissie vroeg met klem om een handtekeningenlijst. Met naam, adres en paraaf laten we zien dat we hier gezamenlijk een oplossing voor willen, en dat het niet alleen gaat om een paar bewoners die de commissie toespraken.',
+      scope: 'Wij spreken namens de straat, uitsluitend over de belangen van de picknicktafels en fietsenrekken. Dat doen bewoners van Groenoordstraat 14 en Groenoordstraat 0 (Haarlemmerweg 42H). Over niets anders vertegenwoordigen wij jou.',
+      scope_label: 'Alleen dit onderwerp', scope_dlg: 'Je handtekening gaat uitsluitend over de belangen van de picknicktafels en fietsenrekken in de parkeervakken. Over niets anders spreken wij namens jou.',
+      call3: 'Dit is geen stemming over een besluit, maar een formaliteit. Jullie hulp is essentieel. Woon je met meer mensen? Laat iedereen tekenen: elke handtekening maakt ons verhaal sterker.',
+      fact0: 'Naar aanleiding van een melding kwam handhaving langs in de straat.',
+      fact1: 'Handhaving verbood alle picknicktafels in parkeervakken.',
+      fact2: 'Fietsparkeren in de voorste parkeervakken werd verboden.',
+      factO: 'Enkele bewoners van Groenoordstraat 14 en Haarlemmerweg 42H maakten officieel bezwaar bij de gemeente (zaaknummer 1.2026.0666).',
+      fact3: 'We haalden jullie mening op in een enquête.', fact3_link: 'Bekijk de resultaten (pdf)',
+      fact4: 'De gemeente sloeg mediation over: direct een hoorzitting.',
+      fact5: 'De gemeente stelt dat er niet geparkeerd kan worden in een parkeervak met picknicktafel.',
+      fact6: 'De gemeente stelt dat als er fietsen in de weg staan, bewoners gewoon de handhaving kunnen bellen.',
+      fact7: 'Er lijkt ruimte voor een oplossing: we hebben jullie handtekeningen nodig.',
+      req1: 'Beperk picknicktafels tot 2 in parkeervakken en 1 op de stoep.',
+      req2: 'Laat ruimte voor de fietsenstalling aan het begin van de straat.',
+      req3: 'Sta een pilotperiode toe voor deze opstelling.',
+      req4: 'Help ons met structurele oplossingen voor het fietsenprobleem, niet alleen met handhaving.',
+      sign_text: 'Vul hieronder je naam en adres in en zet je paraaf. Woon je met meer mensen? Laat ook de rest van je huishouden tekenen: elke handtekening telt.',
+      name: 'Volledige naam', street: 'Straat', housenr: 'Huisnummer', housenr_ph: '14 of 14B', note: 'Opmerking', note_hint: 'Optioneel, maximaal 256 tekens.', legal: 'Let op: een handtekening namaken of andermans gegevens invullen is strafbaar (valsheid in geschrifte, art. 225 Wetboek van Strafrecht).', signature: 'Paraaf', draw: 'Teken hier',
+      clear: 'Opnieuw', submit: 'Versturen',
+      copy: 'Werkt mailen niet? Kopieer je gegevens en deel via DM',
+      ok_copied: 'Gekopieerd. Plak het in een mail naar ' + MAIL_TO + ' of stuur het ons via DM.', err_copy: 'Kopiëren lukte niet op dit toestel.',
+      err_missing: 'Nog niet compleet. Vul in: ',
+      m_name: 'Naam', m_address: 'Adres', m_note: 'Opmerking', m_time: 'Tijd', m_sig: 'Handtekening (code, niet aanpassen)',
+      m_subject: 'Handtekening: picknicktafels en fietsen',
+      thx_title: 'Dank je wel',
+      thx_text: 'Je mail-app is geopend met je gegevens. Druk daar nog even op verzenden.',
+      thx_more: 'Woont er nog iemand met je in huis? Deel de link, dan kan die ook tekenen.',
+      thx_share: 'Deel met huisgenoten', thx_copied: 'Link gekopieerd.',
+      share_text: 'Teken ook mee voor behoud van onze picknicktafels en fietsen:',
+      alt1: 'Kantoorgebouw met donkere gevel aan een straat, met fietsers ervoor',
+      alt2: 'Een picknicktafel op de stoep naast geparkeerde fietsen in een straat met bakstenen huizen',
+      alt3: 'Plattegrond van de straat met de parkeervakken A tot en met M',
+      alt4: 'Kind met een helm met kabels en rode bollen aan een tafel',
+      privacy_text: 'Je naam, adres en paraaf worden per e-mail verzameld en uitsluitend gedeeld met de hoorzittingscommissie. Ze dienen alleen om aan te tonen dat het verzoek – voor behoud van picknicktafels en fietsen – door meerdere bewoners van de straat wordt gedragen.'
+    },
+    en: {
+      title: 'Keep our picnic tables and bikes', clip_alt: 'Newspaper article in the Leids Dagblad: Picnic tables and racks remain illegal', clip_open: 'View the article', zoom_in: 'Zoom in', zoom_out: 'Zoom out', tools_title: 'Tools', tool_survey: 'Survey', tool_survey_merge: 'Merge survey responses', tool_sig_merge: 'Merge signatures', tool_flyer: 'Flyer (PDF)', head: 'Petition', cta: 'Sign with us', close: 'Close', mail_hello: 'Thank you for signing! Please send this message as it is: the code at the bottom is your drawn signature.', sig_clear: 'Redo signature', lang_to: 'Wissel naar Nederlands', theme: 'Light or dark',
+      tab_call: '1. Petition', tab_facts: '2. Facts', tab_request: '3. Request', tab_privacy: 'Privacy',
+      call1: 'On Friday the 20th the hearing about the parking spaces, picnic tables and bikes in our street finally took place. The committee was open to our side of the story, but can only advise the municipality.',
+      call2: 'The committee urgently asked for a list of signatures. With name, address and signature we show that we want a solution together, and that this is not just a few residents who addressed the committee.',
+      scope: 'We speak on behalf of the street, solely about the interests of the picnic tables and bike racks. This is done by residents of Groenoordstraat 14 and Groenoordstraat 0 (Haarlemmerweg 42H). On nothing else do we represent you.',
+      scope_label: 'This issue only', scope_dlg: 'Your signature is solely about the interests of the picnic tables and bike racks in the parking spaces. We speak on your behalf on nothing else.',
+      call3: 'This is not a vote on a decision, just a formality. Your help is essential. Live with others? Let everyone sign: every signature makes our case stronger.',
+      fact0: 'Following a report, enforcement visited our street.',
+      fact1: 'Enforcement banned all picnic tables in parking spaces.',
+      fact2: 'Bike parking in the front spaces was banned.',
+      factO: 'Some residents of Groenoordstraat 14 and Haarlemmerweg 42H filed an official objection with the municipality (case number 1.2026.0666).',
+      fact3: 'We surveyed your opinions.', fact3_link: 'View the results (pdf)',
+      fact4: 'The municipality skipped mediation, going straight to a hearing.',
+      fact5: 'The municipality states that parking is not possible in a parking space with a picnic table.',
+      fact6: 'The municipality states that if bikes are in the way, residents can simply call enforcement.',
+      fact7: 'There seems room for a solution: we need your signatures.',
+      req1: 'Limit picnic tables to 2 in parking spaces and 1 on the pavement.',
+      req2: 'Keep room for bike storage at the start of the street.',
+      req3: 'Allow a pilot period for this layout.',
+      req4: 'Help us find structural solutions for the bike problem, not just enforcement.',
+      sign_text: 'Enter your name and address below and add your signature. Live with others? Let the rest of your household sign too: every signature counts.',
+      name: 'Full name', street: 'Street', housenr: 'House number', housenr_ph: '14 or 14B', note: 'Comment', note_hint: 'Optional, 256 characters at most.', legal: 'Note: forging a signature or filling in someone else’s details is a criminal offence (forgery of documents, art. 225 of the Dutch Criminal Code).', signature: 'Signature', draw: 'Draw here',
+      clear: 'Start over', submit: 'Send',
+      copy: 'Email not working? Copy your details and share via DM',
+      ok_copied: 'Copied. Paste it into an email to ' + MAIL_TO + ' or send it to us via DM.', err_copy: 'Copying did not work on this device.',
+      err_missing: 'Not complete yet. Please fill in: ',
+      m_name: 'Name', m_address: 'Address', m_note: 'Comment', m_time: 'Time', m_sig: 'Signature (code, do not change)',
+      m_subject: 'Signature: picnic tables and bikes',
+      thx_title: 'Thank you',
+      thx_text: 'Your mail app has opened with your details. Press send there to finish.',
+      thx_more: 'Does anyone else in your household want to sign? Share the link, so they can sign too.',
+      thx_share: 'Share with your household', thx_copied: 'Link copied.',
+      share_text: 'Sign too, to keep our picnic tables and bikes:',
+      alt1: 'Office building with a dark facade on a street, with cyclists in front',
+      alt2: 'A picnic table on the pavement next to parked bikes in a street with brick houses',
+      alt3: 'Map of the street with parking spaces A to M',
+      alt4: 'Child at a table wearing a helmet with cables and red spheres',
+      privacy_text: 'Your name, address and signature are collected by email and shared only with the hearing committee. They serve solely to show that the request – to keep the picnic tables and bikes – is supported by multiple residents of the street.'
+    }
+  };
+
+  const $ = id => document.getElementById(id);
+  const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+                  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+  let lang = store.get('lang') === 'en' ? 'en' : 'nl';
+  const t = k => T[lang][k];
+  const setMsg = (text, err) => { const m = $('msg'); m.textContent = text; m.className = 'msg' + (err ? ' err' : ''); };
+
+  // Taal
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = t('title');
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    $('lang').textContent = lang === 'nl' ? '🇬🇧' : '🇳🇱';   // toont de taal waarnaar je wisselt
+    $('lang').setAttribute('aria-label', t('lang_to')); $('lang').title = t('lang_to');
+    $('theme').setAttribute('aria-label', t('theme')); $('theme').title = t('theme');
+    $('clearsig').setAttribute('aria-label', t('sig_clear')); $('clearsig').title = t('sig_clear');
+    $('tools').setAttribute('aria-label', t('tools_title')); $('tools').title = t('tools_title');
+    $('ropen').setAttribute('aria-label', t('clip_open')); $('ropen').title = t('clip_open');
+    $('rplus').setAttribute('aria-label', t('zoom_in')); $('rplus').title = t('zoom_in');
+    $('rminus').setAttribute('aria-label', t('zoom_out')); $('rminus').title = t('zoom_out');
+    ['dclose', 'tclose', 'kclose', 'rclose'].forEach(id => { $(id).setAttribute('aria-label', t('close')); $(id).title = t('close'); });
+    $('tmsg').textContent = '';
+    document.querySelectorAll('img[data-alt]').forEach(im => { im.alt = t(im.dataset.alt); });
+    setMsg('');
+  }
+  $('lang').addEventListener('click', () => { lang = lang === 'nl' ? 'en' : 'nl'; store.set('lang', lang); applyLang(); });
+
+  // Thema (start donker)
+  function applyTheme(th) { document.documentElement.dataset.theme = th; if (typeof paint === 'function') paint(); }
+  $('theme').addEventListener('click', () => {
+    const th = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    store.set('theme', th); applyTheme(th);
+  });
+
+  // Tabs
+  const tabs = [...document.querySelectorAll('[role=tab]')];
+  function show(tab, fromHash) {
+    tabs.forEach(x => {
+      const on = x === tab;
+      x.setAttribute('aria-selected', on);
+      $(x.getAttribute('aria-controls')).hidden = !on;
+    });
+    $('track').style.transform = 'translateX(' + (-100 * tabs.indexOf(tab)) + '%)';
+    if (!fromHash) { try { history.replaceState(null, '', '#' + tab.id.slice(2)); } catch {} }
+    const y = $('sentinel').offsetTop - 56;           // naar de tabbalk scrollen
+    if (window.scrollY > y) window.scrollTo(0, y);
+  }
+  tabs.forEach(x => x.addEventListener('click', () => show(x)));
+  const fromHash = () => {
+    const h = location.hash.toLowerCase();   // #EN of #NL kiest de taal; zonder # geldt je eerdere keuze, anders NL
+    if (h === '#en' || h === '#nl') { lang = h.slice(1); store.set('lang', lang); applyLang(); return; }
+    if (location.hash === '#tekenen') { openDlg(); return; }
+    const x = tabs.find(a => '#' + a.id.slice(2) === location.hash); if (x) show(x, true);
+  };
+  window.addEventListener('hashchange', fromHash);
+
+  // Formulier-venster
+  const dlg = $('dlg');
+  function openModal(d) { if (d.open) return; d.showModal(); document.body.style.overflow = 'hidden'; }
+  const closeModal = () => { if (!document.querySelector('dialog[open]')) { document.body.style.overflow = ''; $('open').focus(); } };
+  function openDlg() { openModal(dlg); paint(); $('dclose').focus(); }
+  dlg.addEventListener('close', closeModal);
+  $('open').addEventListener('click', openDlg);
+  $('dclose').addEventListener('click', () => dlg.close());
+  document.querySelectorAll('dialog.modal').forEach(d => {
+    d.addEventListener('click', e => {   // tik op de gedimde achtergrond sluit
+      const r = d.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+    });
+  });
+  const rdlg = $('rdlg'), rimg = $('rimg'), rsc = $('rscroll'); let zoom = 1;
+  const setZoom = z => {
+    const old = zoom; zoom = Math.min(4, Math.max(1, z));
+    const cx = (rsc.scrollLeft + rsc.clientWidth / 2) / rimg.clientWidth, cy = (rsc.scrollTop + rsc.clientHeight / 2) / rimg.clientHeight;
+    rimg.style.width = (rsc.clientWidth * zoom) + 'px';
+    if (old !== zoom) { rsc.scrollLeft = cx * rimg.clientWidth - rsc.clientWidth / 2; rsc.scrollTop = cy * rimg.clientHeight - rsc.clientHeight / 2; }
+    $('rminus').disabled = zoom <= 1; $('rplus').disabled = zoom >= 4;
+  };
+  $('ropen').addEventListener('click', () => {
+    openModal(rdlg); zoom = 1; rimg.style.width = rsc.clientWidth + 'px';
+    setZoom(rsc.clientWidth < 600 ? 2.5 : 1); rsc.scrollTop = 0; rsc.scrollLeft = 0; rsc.focus();
+  });
+  $('rplus').addEventListener('click', () => setZoom(zoom * 1.4));
+  $('rminus').addEventListener('click', () => setZoom(zoom / 1.4));
+  $('rclose').addEventListener('click', () => rdlg.close());
+  rdlg.addEventListener('close', closeModal);
+  const kdlg = $('kdlg');
+  $('tools').addEventListener('click', () => openModal(kdlg));
+  kdlg.addEventListener('close', closeModal);
+  $('kclose').addEventListener('click', () => kdlg.close());
+  const thx = $('thx');
+  thx.addEventListener('close', closeModal);
+  $('tclose').addEventListener('click', () => thx.close());
+  $('tclose2').addEventListener('click', () => thx.close());
+  $('share').addEventListener('click', async () => {
+    const url = location.href.split('#')[0] + '#tekenen';   // opent bij de ontvanger meteen het formulier
+    try {
+      if (navigator.share) { await navigator.share({ title: t('title'), text: t('share_text'), url }); return; }
+      await navigator.clipboard.writeText(url); $('tmsg').textContent = t('thx_copied');
+    } catch (e) { if (e && e.name !== 'AbortError') $('tmsg').textContent = url; }
+  });
+
+  // Paraaf
+  const canvas = $('pad'), ctx = canvas.getContext('2d');
+  let drawing = false, dirty = false, strokes = [];
+  function paint() {
+    const r = canvas.getBoundingClientRect(); if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#111';
+    strokes.forEach(st => {
+      ctx.beginPath(); ctx.moveTo(st[0][0], st[0][1]);
+      if (st.length === 1) ctx.lineTo(st[0][0] + .01, st[0][1]);
+      st.slice(1).forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.stroke();
+    });
+    $('hint').style.display = strokes.length ? 'none' : '';
+    $('clearsig').hidden = !strokes.length;
+  }
+  function setup() { strokes = []; dirty = false; paint(); }
+  const pos = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true; canvas.setPointerCapture(e.pointerId);
+    const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + .01, y); ctx.stroke();
+    strokes.push([[x, y]]); dirty = true; $('hint').style.display = 'none'; $('clearsig').hidden = false;
+    $('padbox').classList.remove('invalid');
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke();
+    const st = strokes[strokes.length - 1], l = st[st.length - 1];
+    if (Math.hypot(x - l[0], y - l[1]) >= 2) st.push([x, y]);
+  });
+  ['pointerup', 'pointercancel'].forEach(ev => canvas.addEventListener(ev, () => { drawing = false; }));
+  window.addEventListener('resize', paint);
+  window.addEventListener('orientationchange', () => setTimeout(paint, 200));
+
+  $('clearsig').addEventListener('click', setup);   // alleen de paraaf opnieuw
+
+  const DEFAULT_STREET = 'Groenoordstraat';
+  function resetForm() {
+    $('name').value = ''; $('street').value = DEFAULT_STREET; $('housenr').value = ''; $('note').value = '';
+    ['name', 'street', 'housenr', 'padbox'].forEach(id => $(id).classList.remove('invalid'));
+    setMsg(''); setup();
+  }
+  $('clear').addEventListener('click', resetForm);
+
+
+  // Paraaf als korte code (geen URL): 64 tekens uit een mailveilig alfabet.
+  // S1 + hoogte, daarna per streek: startpunt, aantal stappen, stappen (dx,dy). Eindigt op een punt.
+  const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const e2 = n => ABC[n >> 6] + ABC[n & 63], d1 = n => ABC[n + 32];
+  function signatureCode() {
+    const w = canvas.getBoundingClientRect().width || 300, k = 300 / w, vh = Math.round(160 * k);
+    let out = 'S1' + e2(vh);
+    strokes.forEach(st => {
+      const pts = [];
+      st.forEach(([x, y]) => {
+        x = Math.min(300, Math.max(0, Math.round(x * k))); y = Math.min(vh, Math.max(0, Math.round(y * k)));
+        const l = pts[pts.length - 1]; if (!l || l[0] !== x || l[1] !== y) pts.push([x, y]);
+      });
+      const steps = [];
+      for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+        const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 31));
+        let px = pts[i - 1][0], py = pts[i - 1][1];
+        for (let j = 1; j <= n; j++) {
+          const tx = pts[i - 1][0] + Math.round(dx * j / n), ty = pts[i - 1][1] + Math.round(dy * j / n);
+          steps.push([tx - px, ty - py]); px = tx; py = ty;
+        }
+      }
+      out += e2(pts[0][0]) + e2(pts[0][1]) + e2(steps.length) + steps.map(([a, b]) => d1(a) + d1(b)).join('');
+    });
+    return out + '.';
+  }
+  // De mail volgt de taal van de bezoeker; de samenvoegtool herkent NL en EN
+  const mailBody = e => [
+    t('mail_hello'),
+    '',
+    t('m_name') + ': ' + e.name,
+    t('m_address') + ': ' + e.address,
+    t('m_note') + ': ' + e.note,
+    t('m_time') + ': ' + e.ts,
+    '',
+    t('m_sig') + ':',
+    signatureCode()
+  ].join('\r\n');
+
+  // Invoer opschonen: stuurtekens, onzichtbare en richting-omkerende tekens eruit, regeleinden naar spatie, max 256
+  const clean = s => String(s)
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2028\u2029\u2066-\u2069\uFEFF]+/g, ' ')
+    .replace(/\s+/g, ' ').trim().slice(0, 256);
+
+  ['name', 'street', 'housenr'].forEach(id => $(id).addEventListener('input', () => $(id).classList.remove('invalid')));
+
+  // Controle van de drie verplichte velden; geeft de invoer terug, of null met een melding
+  function collect() {
+    const name = clean($('name').value), street = clean($('street').value), nr = clean($('housenr').value);
+    const address = (street + ' ' + nr).trim();
+    const missing = [];
+    if (!name) missing.push(['name', $('name')]);
+    if (!street) missing.push(['street', $('street')]);
+    if (!nr) missing.push(['housenr', $('housenr')]);
+    if (!dirty) missing.push(['signature', $('padbox')]);
+    ['name', 'street', 'housenr', 'padbox'].forEach(id => $(id).classList.remove('invalid'));
+    if (missing.length) {
+      missing.forEach(([, el]) => el.classList.add('invalid'));
+      setMsg(t('err_missing') + missing.map(([k]) => t(k).toLowerCase()).join(', ') + '.', true);
+      missing[0][1].scrollIntoView({ block: 'center' });
+      if (missing[0][1].focus) missing[0][1].focus();
+      return null;
+    }
+    return { name, address, note: clean($('note').value), ts: new Date().toISOString() };
+  }
+
+  $('form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const entry = collect(); if (!entry) return;
+    const url = 'mailto:' + MAIL_TO + '?subject=' + encodeURIComponent(t('m_subject')) +
+      '&body=' + encodeURIComponent(mailBody(entry));
+    window.location.href = url;
+    dlg.close(); resetForm(); openModal($('thx'));
+  });
+
+  $('copy').addEventListener('click', async () => {
+    const entry = collect(); if (!entry) return;
+    try { await navigator.clipboard.writeText(mailBody(entry)); setMsg(t('ok_copied'), false); }
+    catch { setMsg(t('err_copy'), true); }
+  });
+
+  document.querySelectorAll('.slide img').forEach(im => im.addEventListener('error', () => im.classList.add('err')));
+  resetForm();
+  document.documentElement.dataset.theme = store.get('theme') === 'light' ? 'light' : 'dark';
+  applyLang();
+  fromHash();
+})();
+</script>
+</body>
+</html>

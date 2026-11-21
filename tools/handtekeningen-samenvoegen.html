@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Handtekeningen samenvoegen</title>
+<style>
+  :root {
+    --bg:#111112; --surface:#1c1c1e; --line:#2a2a2c; --ink:#f1f1ee; --muted:#9b9b97;
+    --accent:#f1f1ee; --on-accent:#111112; --focus:#9ab8ff; --bad:#ffb454;
+    --sans:system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --radius:2px;
+  }
+  :root[data-theme=light] {
+    --bg:#f5f4f0; --surface:#eae9e4; --line:#d9d8d2; --ink:#151515; --muted:#66665f;
+    --accent:#151515; --on-accent:#f5f4f0; --focus:#2b59c3; --bad:#b45309;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/24px var(--sans); }
+  .wrap { max-width:900px; margin:0 auto; padding:0 16px 48px; }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+  .bar { height:56px; display:flex; align-items:center; justify-content:space-between; }
+  .label { font:500 11px/16px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .icon { width:44px; height:44px; margin-right:-12px; padding:0; border:0; border-radius:var(--radius); background:transparent; color:var(--ink); cursor:pointer; display:grid; place-items:center; }
+  h1 { margin:0; padding:16px 0 8px; font:600 28px/32px var(--sans); }
+  .sub { margin:0 0 24px; font:400 13px/18px var(--sans); color:var(--muted); }
+  textarea { display:block; width:100%; min-height:200px; padding:12px; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:13px/18px var(--mono); resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; max-width:420px; }
+  .btn { height:44px; padding:0 10px; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:600 15px/20px var(--sans); white-space:nowrap; cursor:pointer; }
+  .btn.primary { background:var(--accent); color:var(--on-accent); }
+  #out { margin-top:32px; }
+  .summary { margin:0 0 8px; font:400 14px/20px var(--mono); }
+  .warn { margin:0 0 8px; font:400 13px/18px var(--sans); color:var(--bad); }
+  .scroll { overflow-x:auto; overscroll-behavior-x:contain; }
+  table { width:100%; border-collapse:collapse; margin-top:16px; }
+  th { text-align:left; padding:8px 12px 8px 0; font:500 11px/16px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); }
+  td { padding:8px 12px 8px 0; vertical-align:middle; border-bottom:1px solid var(--line); }
+  td.n { font:400 13px/20px var(--mono); color:var(--muted); width:2.5em; }
+  td.sig { width:170px; }
+  td.sig img { display:block; width:150px; height:auto; background:#fff; border-radius:var(--radius); }
+  td.miss { color:var(--bad); font-size:13px; }
+  .printrow { margin-top:24px; }
+
+  @media print {
+    :root, :root[data-theme=light] { --bg:#fff; --ink:#000; --muted:#555; --line:#bbb; --surface:#fff; }
+    .noprint { display:none !important; }
+    .wrap { max-width:none; padding:0; }
+    h1 { padding-top:0; }
+    #out { margin-top:8px; }
+    tr { break-inside:avoid; }
+    @page { size:A4; margin:18mm 16mm 20mm; @bottom-left { content:"ZAAKNUMMER 1.2026.0666  ·  GEGEVENS UITSLUITEND VOOR DE COMMISSIE"; font:500 8pt var(--mono); letter-spacing:.14em; color:#555; } @bottom-right { content:"PAGINA " counter(page); font:500 8pt var(--mono); letter-spacing:.14em; color:#555; } }
+    .screenonly { display:none !important; }
+    .printonly { display:block !important; }
+    .doc-case { font:500 8pt/12pt var(--mono); letter-spacing:.14em; color:#555; }
+    .doc-title { margin:0; padding:6pt 0 4pt; font:600 24pt/28pt var(--sans); }
+    .doc-date { margin:0 0 16pt; font:400 12pt/16pt var(--sans); }
+    .doc-intro { margin:0 0 16pt; font:400 11pt/16pt 'Iowan Old Style','Palatino Linotype',Georgia,serif; }
+    .summary { font:500 8pt/12pt var(--mono); letter-spacing:.14em; text-transform:uppercase; }
+    th, td { padding-right:10pt; }
+    td.n { width:1.5em; }
+    td:nth-child(3) { white-space:nowrap; }
+    td.sig { width:115pt; }
+    td.sig img { width:105pt; }
+  }
+  .printonly { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar noprint">
+    <span class="label">Petitie</span>
+    <button type="button" class="icon" id="theme" aria-label="Licht of donker" title="Licht of donker"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+  </div>
+  <h1 class="screenonly">Handtekeningen samenvoegen</h1>
+  <div class="printonly">
+    <div class="doc-case">ZAAKNUMMER 1.2026.0666</div>
+    <h1 class="doc-title">Handtekeningenlijst bewoners Groenoordstraat</h1>
+    <p class="doc-date">Hoorzitting van vrijdag 20 november 2026</p>
+    <p class="doc-intro">De commissie vroeg tijdens de hoorzitting om een handtekeningenlijst. Met naam, adres en paraaf laten wij zien dat we gezamenlijk een oplossing willen voor de picknicktafels en fietsen in de parkeervakken van de Groenoordstraat, en dat het niet om een paar bewoners gaat.</p>
+  </div>
+  <p class="sub noprint">Plak alle ontvangen e-mails onder elkaar.</p>
+
+  <div class="noprint">
+    <textarea id="in" aria-label="Geplakte e-mails" spellcheck="false"></textarea>
+    <div class="row">
+      <button type="button" class="btn" id="clear">Leegmaken</button>
+      <button type="button" class="btn primary" id="go">Voeg samen</button>
+    </div>
+  </div>
+
+  <div id="out" hidden>
+    <p class="summary" id="summary"></p>
+    <p class="warn" id="warn"></p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Naam</th><th>Adres</th><th>Handtekening</th><th>Opmerking</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="printrow noprint"><button type="button" class="btn primary" id="print" style="padding:0 20px">Print of bewaar als pdf</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+  // Thema
+  try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch {}
+  $('theme').addEventListener('click', () => {
+    const th = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = th; try { localStorage.setItem('theme', th); } catch {}
+  });
+
+  // Paraaf: alleen getallen en vaste tekens komen in de afbeelding; zelf opgebouwd, dus nooit pagina-code uit een mail
+  const svgUrl = (vh, d) => 'data:image/svg+xml,' + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 " + vh + "'><rect width='100%' height='100%' fill='white'/>" +
+    "<path d='" + d + "' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+
+  // Nieuwe vorm: korte code S1…
+  function fromCode(code) {
+    let i = 2;
+    const ix = c => ABC.indexOf(c);
+    const r2 = () => { const a = ix(code[i]), b = ix(code[i + 1]); if (a < 0 || b < 0) throw 0; i += 2; return a * 64 + b; };
+    const r1 = () => { const a = ix(code[i]); if (a < 0) throw 0; i++; return a - 32; };
+    if (code.slice(0, 2) !== 'S1') throw 0;
+    const vh = r2(); let d = '';
+    while (i < code.length - 1) {
+      const x = r2(), y = r2(), n = r2();
+      d += 'M' + x + ' ' + y;
+      if (!n) { d += 'l0 0'; continue; }
+      const s = []; for (let k = 0; k < n; k++) s.push(r1() + ' ' + r1());
+      d += 'l' + s.join(' ');
+    }
+    if (!d || i !== code.length - 1 || code[i] !== '.') throw 0;
+    return svgUrl(vh, d);
+  }
+  // Oude vorm: data:image/svg+xml-regel; alleen hoogte en pad overnemen en zelf opnieuw opbouwen
+  function fromDataUrl(url) {
+    const svg = decodeURIComponent(url.slice(url.indexOf(',') + 1));
+    const vh = /viewBox='0 0 300 (\d{1,4})'/.exec(svg), d = /<path d='([-0-9 Ml]*)'/.exec(svg);
+    if (!vh || !d) throw 0;
+    return svgUrl(vh[1], d[1]);
+  }
+  function findSignature(rest) {
+    const flat = rest.replace(/\s+/g, '');
+    let m = /S1[A-Za-z0-9_-]+\./.exec(flat);
+    if (m) { try { return fromCode(m[0]); } catch {} }
+    m = /data:image\/svg\+xml,.*?%3C%2Fsvg%3E/.exec(flat);
+    if (m) { try { return fromDataUrl(m[0]); } catch {} }
+    return null;
+  }
+
+  // Mails opsplitsen op regels die met "Naam:" beginnen (ook binnen een citaat met >)
+  function parse(text) {
+    const lines = text.replace(/\r/g, '').split('\n').map(l => l.replace(/^[\s>]+/, ''));
+    const blocks = []; let cur = null;
+    lines.forEach(l => {
+      if (/^(Naam|Name):/i.test(l)) { cur = []; blocks.push(cur); }
+      if (cur) cur.push(l);
+    });
+    return blocks.map(b => {
+      const field = re => { const l = b.find(x => re.test(x)); return l ? l.replace(re, '').trim() : ''; };
+      const k = b.findIndex(x => /^(Handtekening|Paraaf|Signature)\b/i.test(x));
+      return {
+        name: field(/^(Naam|Name):/i), address: field(/^(Adres|Address):/i), note: field(/^(Opmerking|Comment):/i), time: field(/^(Tijd|Time):/i),
+        sig: k >= 0 ? findSignature(b.slice(k + 1).join('\n')) : null
+      };
+    });
+  }
+
+  const norm = s => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  const coll = new Intl.Collator('nl', { numeric: true, sensitivity: 'base' });
+  const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+
+  function run() {
+    const all = parse($('in').value);
+    const list = all;
+    list.sort((a, b) => coll.compare(a.address, b.address) || coll.compare(a.name, b.name));
+
+    const rows = $('rows'); rows.replaceChildren();
+    let nosig = 0;
+    list.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.appendChild(td); return td; };
+      cell(String(i + 1), 'n'); cell(e.name); cell(e.address);
+      const sg = cell('', 'sig');
+      if (e.sig) { const img = document.createElement('img'); img.src = e.sig; img.alt = 'Handtekening van ' + e.name; sg.appendChild(img); }
+      else { sg.className = 'sig miss'; sg.textContent = 'paraaf niet leesbaar'; nosig++; }
+      cell(e.note);
+      rows.appendChild(tr);
+    });
+
+    const addrs = new Set(list.map(e => norm(e.address)).filter(Boolean));
+    $('summary').textContent = plural(list.length, 'handtekening', 'handtekeningen') + ' · ' + plural(addrs.size, 'adres', 'adressen');
+    const w = [];
+    if (nosig) w.push(plural(nosig, 'paraaf', 'paraafs') + ' niet leesbaar: controleer de mail zelf.');
+    if (!list.length) w.push('Geen handtekeningen gevonden. Elke mail begint met "Naam:" of "Name:".');
+    $('warn').textContent = w.join(' ');
+    $('out').hidden = false;
+  }
+
+  $('go').addEventListener('click', run);
+  $('clear').addEventListener('click', () => { $('in').value = ''; $('out').hidden = true; $('in').focus(); });
+  $('print').addEventListener('click', () => window.print());
+})();
+</script>
+</body>
+</html>

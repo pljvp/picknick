@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groenoordstraat — reacties samenvoegen</title>
+<style>
+  :root{
+    --paper:#F5F0E4; --ink:#1F2D2A; --navy:#233B4D;
+    --green:#4C7A52; --green-dark:#345839; --brick:#9C4A3A; --line:#C9BFA3;
+    /* kleuren overgenomen uit de PDOK BGT-bron */
+    --bgt-pand:#D2D2D2; --bgt-pand-lijn:#B4B4B4;
+    --bgt-stoep:#FCEFF8; --bgt-stoep-lijn:#E8D5E0;
+    --bgt-straat:#FFFFFF; --bgt-groen:#E0EDDB; --bgt-groen-lijn:#C3D9BA;
+    /* kleurcodering antwoorden — verzadigd maar grijzig, niet fel */
+    --c-graag:#4C7A52;        --c-graag-dark:#375C3D;
+    --c-prima:#93AE7B;        --c-prima-dark:#748F5C;
+    --c-lieverniet:#D2B856;   --c-lieverniet-dark:#B49A3E;
+    --c-absoluutniet:#C97A42; --c-absoluutniet-dark:#A85F2F;
+    --c-geenmening:#E8E8E8;   --c-geenmening-dark:#C9C9C9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45;}
+  h1,h2{font-family:Georgia,serif;color:var(--navy);margin:0 0 .3em;}
+  .wrap{max-width:720px;margin:0 auto;padding:24px 16px 60px;}
+  h1{font-size:1.4rem;}
+  p.intro{font-size:.9rem;color:#3c4a45;}
+  textarea#raw{
+    width:100%;min-height:180px;padding:12px;border:1px solid var(--line);
+    border-radius:8px;font-family:monospace;font-size:.82rem;background:#fff;
+  }
+  button#go{
+    margin-top:10px;padding:12px 18px;background:var(--brick);color:#fff;
+    border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.95rem;
+  }
+  #summary{margin-top:26px;}
+  .stat{font-size:.85rem;color:#4a453a;margin-bottom:14px;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.75rem;margin:8px 0 14px;color:#4a453a;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid #b9b2a2;}
+
+  .map-scroll{max-height:70vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:18px;}
+  svg#kaart{width:100%;height:auto;display:block;}
+  .pand{fill:var(--bgt-pand);stroke:var(--bgt-pand-lijn);stroke-width:1.5;}
+  .pand-clickable{cursor:pointer;}
+  .pand-clickable:hover{fill:#c3d3e0;}
+  .pand-selected{fill:var(--brick) !important;stroke:var(--navy);stroke-width:2.5;}
+  .stoep{fill:var(--bgt-stoep);stroke:var(--bgt-stoep-lijn);stroke-width:1.5;}
+  .straat{fill:var(--bgt-straat);stroke:#DCD2D8;stroke-width:1.5;}
+  .boom{fill:var(--bgt-groen);stroke:var(--bgt-groen-lijn);stroke-width:1.5;}
+  .nr{font-size:19px;fill:#7C7C7C;font-family:Arial,sans-serif;}
+  .straatnaam{font-size:17px;fill:#9A9A9A;font-family:Arial,sans-serif;}
+  .vak-let{font-size:18px;font-weight:700;font-family:Arial,sans-serif;fill:#233B4D;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:2.5px;stroke-linejoin:round;}
+  .vak-leeg{fill:#D6CFBD;stroke:var(--navy);stroke-width:1.5;stroke-dasharray:5,3;}
+
+  table{width:100%;table-layout:fixed;border-collapse:collapse;background:#fff;margin-bottom:18px;font-size:.8rem;}
+  th,td{border:1px solid var(--line);padding:6px 4px;text-align:center;word-wrap:break-word;}
+  th:first-child,td:first-child{width:16.666%;text-align:left;padding-left:8px;}
+  th{background:var(--navy);color:#fff;font-weight:600;}
+  td:first-child, th:first-child{text-align:left;}
+  .block-title{font-weight:700;color:var(--navy);margin:16px 0 6px;font-size:.95rem;}
+  ul.notes{margin:0 0 10px;padding-left:18px;font-size:.85rem;}
+  ul.notes li{margin-bottom:4px;}
+  .err{color:var(--brick);font-size:.85rem;margin-top:8px;}
+  .print-only{display:none;}
+
+  .filterbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FBF0DE;border:1px solid #C98A34;color:#7A4A17;padding:8px 12px;border-radius:8px;font-size:.82rem;margin-bottom:12px;flex-wrap:wrap;}
+  .filterbar button{background:none;border:1px solid #7A4A17;color:#7A4A17;padding:4px 10px;border-radius:14px;font-size:.75rem;cursor:pointer;font-family:inherit;}
+
+  .resp-scroll{overflow-x:auto;margin-bottom:14px;-webkit-overflow-scrolling:touch;}
+  table.resp-table{width:auto;table-layout:auto;border-collapse:collapse;background:#fff;font-size:.72rem;}
+  table.resp-table th,table.resp-table td{border:1px solid var(--line);padding:4px 6px;text-align:center;white-space:nowrap;}
+  table.resp-table th:first-child,table.resp-table td.resp-wie{text-align:left;position:sticky;left:0;background:#fff;padding-left:8px;max-width:180px;white-space:normal;}
+  table.resp-table th{background:var(--navy);color:#fff;font-weight:600;}
+  table.resp-table th:first-child{background:var(--navy);}
+  table.resp-table td:not(.resp-wie){font-weight:700;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.35);position:relative;}
+  table.resp-table td.heeft-motivatie::after{content:'';position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 1px rgba(0,0,0,.5);}
+
+  .print-title{font-family:Georgia,serif;color:var(--navy);font-size:1.15rem;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid var(--navy);}
+
+  .lang-switch{display:inline-flex;border:1px solid var(--navy);border-radius:20px;overflow:hidden;margin-bottom:10px;}
+  .lang-btn{border:none;background:#fff;color:var(--navy);padding:5px 14px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;}
+  .lang-btn.active{background:var(--navy);color:#fff;}
+
+  #printBtn{
+    margin-top:10px;margin-left:8px;padding:12px 18px;background:none;color:var(--navy);
+    border:1px solid var(--navy);border-radius:8px;font-weight:700;cursor:pointer;font-size:.95rem;
+  }
+
+  @page{ margin:16mm 14mm; }
+
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .wrap{max-width:none;padding:14mm 12mm;}
+    .lang-switch{display:none !important;}
+    .print-block{page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;padding:4mm 2mm 0;}
+    .print-block:last-child{page-break-after:auto;break-after:auto;}
+    .map-scroll{max-height:none;overflow:visible;border:none;}
+    svg#kaart{height:210mm;width:auto;max-width:100%;display:block;margin:0 auto;}
+    .print-only{display:block !important;color:#7A4A17;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="lang-switch no-print">
+    <button type="button" class="lang-btn active" id="langNL" onclick="applyLang('nl')">NL</button>
+    <button type="button" class="lang-btn" id="langEN" onclick="applyLang('en')">EN</button>
+  </div>
+  <h1 data-i18n="h1_titel">Reacties samenvoegen</h1>
+  <p class="intro" data-i18n="intro">Plak hieronder de inhoud van alle ontvangen e-mails (gewoon alles achter elkaar, ook meerdere tegelijk is prima). Klik op "Analyseer" voor een overzicht per parkeervak. Elke reactie telt apart mee — ook meerdere bewoners van hetzelfde huisnummer of anonieme reacties. Een niet-ingevuld vak telt automatisch mee als "geen mening".</p>
+
+  <textarea id="raw" class="no-print" data-i18n-ph="raw_ph" placeholder="Plak hier de e-mailteksten..."></textarea><br class="no-print">
+  <button id="go" class="no-print" data-i18n="analyseer_knop">Analyseer</button>
+  <button id="printBtn" class="no-print" data-i18n="print_knop" style="display:none;">🖨️ Print overzicht</button>
+  <label class="no-print" id="horizToggleWrap" style="display:none;margin-left:10px;font-size:.82rem;cursor:pointer;">
+    <input type="checkbox" id="horizToggle" checked> <span data-i18n="horiz_toggle">Horizontale stapeling per vak</span>
+  </label>
+  <div id="err" class="err"></div>
+
+  <div id="summary"></div>
+</div>
+
+<script>
+const OPTIONS = ["graag","prima","geen mening","liever niet","absoluut niet"];
+const KLEUR = {
+  "graag":         "var(--c-graag)",
+  "prima":         "var(--c-prima)",
+  "geen mening":   "var(--c-geenmening)",
+  "liever niet":   "var(--c-lieverniet)",
+  "absoluut niet": "var(--c-absoluutniet)"
+};
+
+/* ====== VERTALINGEN (rapport in NL of EN — de brondata/keuze-waarden
+   blijven altijd Nederlands/canoniek, alleen de weergave wisselt) ====== */
+let LANG = 'nl';
+const OPT_LABEL = {
+  nl: {"graag":"graag","prima":"prima","geen mening":"geen mening","liever niet":"liever niet","absoluut niet":"absoluut niet"},
+  en: {"graag":"would like","prima":"fine","geen mening":"no opinion","liever niet":"rather not","absoluut niet":"absolutely not"}
+};
+// Vaste, unieke afkortingen per antwoord (los van taal) — voorkomt botsingen
+// zoals "Graag" en "Geen mening" die in het NL allebei met G beginnen.
+const OPT_ABBR = {"graag":"G","prima":"P","geen mening":"–","liever niet":"L","absoluut niet":"A"};
+const I18N = {
+  nl: {
+    h1_titel:"Reacties samenvoegen",
+    intro:'Plak hieronder de inhoud van alle ontvangen e-mails (gewoon alles achter elkaar, ook meerdere tegelijk is prima). Klik op "Analyseer" voor een overzicht per parkeervak. Elke reactie telt apart mee — ook meerdere bewoners van hetzelfde huisnummer of anonieme reacties. Een niet-ingevuld vak telt automatisch mee als "geen mening".',
+    raw_ph:"Plak hier de e-mailteksten...",
+    analyseer_knop:"Analyseer",
+    print_knop:"🖨️ Print overzicht",
+    err_geen_reacties:"Geen geldige reacties gevonden in de geplakte tekst.",
+    stat_verwerkt:"reacties verwerkt.",
+    horiz_toggle:"Horizontale stapeling per vak",
+    blok1_titel:"Plattegrond — resultaat per parkeervak",
+    blok2_titel:"Tabel — aantal stemmen per parkeervak",
+    blok3_titel:"Per respondent",
+    blok4_titel:"Toelichtingen en suggesties",
+    th_vak:"Vak", vak_prefix:"Vak",
+    block_motivaties:"Motivaties per vak",
+    block_suggesties:"Algemene suggesties",
+    geen_motivaties:"Geen motivaties opgegeven.",
+    geen_suggesties:"Geen suggesties opgegeven.",
+    anoniem:"anoniem",
+    filter_actief:"Filter actief — alleen huisnummer", filter_wis:"Toon alle reacties",
+    klik_huis_hint:"Tip: klik op een huis op de kaart om alleen de reactie(s) van die woning te tonen.",
+    per_resp_hint:"Eén rij per respondent. Kleur + letter = gekozen antwoord per vak (– = geen mening, om verwarring met G van graag te voorkomen). Een wit stipje = er staat een toelichting bij; beweeg over de cel om die te lezen.",
+    resp_bekend:"Naam en/of huisnummer bekend", resp_anoniem:"Volledig anoniem",
+    resp_niet_print:"Dit blok wordt bewust niet meegeprint, om de privacy van respondenten te beschermen.",
+    print_anoniem_hint:"Namen en huisnummers zijn uit deze print verwijderd.",
+    wie:"Wie"
+  },
+  en: {
+    h1_titel:"Merge responses",
+    intro:'Paste the contents of all received emails below (just one after another, several at once is fine). Click "Analyze" for an overview per parking space. Each response counts separately — including multiple residents of the same house number or anonymous responses. An unanswered space automatically counts as "no opinion".',
+    raw_ph:"Paste the email texts here...",
+    analyseer_knop:"Analyze",
+    print_knop:"🖨️ Print overview",
+    err_geen_reacties:"No valid responses found in the pasted text.",
+    stat_verwerkt:"responses processed.",
+    horiz_toggle:"Horizontal stacking per space",
+    blok1_titel:"Map — result per parking space",
+    blok2_titel:"Table — number of votes per parking space",
+    blok3_titel:"Per respondent",
+    blok4_titel:"Comments and suggestions",
+    th_vak:"Space", vak_prefix:"Space",
+    block_motivaties:"Comments per space",
+    block_suggesties:"General suggestions",
+    geen_motivaties:"No comments given.",
+    geen_suggesties:"No suggestions given.",
+    anoniem:"anonymous",
+    filter_actief:"Filter active — house number only", filter_wis:"Show all responses",
+    klik_huis_hint:"Tip: click a house on the map to show only that household's response(s).",
+    per_resp_hint:"One row per respondent. Color + letter = chosen answer per space (– = no opinion, to avoid confusion with the R of 'rather not'). A white dot = a comment was left; hover the cell to read it.",
+    resp_bekend:"Name and/or house number known", resp_anoniem:"Fully anonymous",
+    resp_niet_print:"This block is deliberately excluded from printing, to protect respondents' privacy.",
+    print_anoniem_hint:"Names and house numbers have been removed from this printout.",
+    wie:"Who"
+  }
+};
+function t(key){ return I18N[LANG][key] ?? key; }
+function applyLang(lang){
+  LANG = lang;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
+  document.getElementById('langNL').classList.toggle('active', lang==='nl');
+  document.getElementById('langEN').classList.toggle('active', lang==='en');
+  // herbereken de resultaten in de nieuwe taal (met behoud van eventueel kaartfilter)
+  if(window.__allSubs){
+    renderResults();
+  }
+}
+
+/* ====== GEOMETRIE, zelfde meting als het enquêteformulier (PDOK BGT) ====== */
+const GEO = {
+  pandWestX:[340,421], stoepWestX:[421,496],
+  vakWestX:[459,494],  straatX:[496,564],
+  vakEastX:[565,599],  stoepEastX:[564,636], pandEastX:[636,720]
+};
+const WEST_BLOK   = {y0:615, y1:991, nr:"42E–42H"};
+const WEST_GRENS  = [991,1082,1176,1269,1362,1454,1555,1645,1736,1826,1930];
+const WEST_NRS    = ["1-1D","3","5","7","9","11","13","15","17","19"];
+const EAST_GRENS  = [616,735,830,917,1006,1093,1181,1270,1357,1447,1534,1624,1716,1801,1930];
+const EAST_NRS    = ["2","4","6","8","10","12","14","16","18","20","22","24","26-26B","28"];
+const BOOM_WEST = [[1161,1208],[1320,1367]];
+const BOOM_EAST = [[790,842],[990,1026],[1162,1210],[1321,1368],[1494,1541],[1689,1742]];
+const LOCATIONS = [
+  {id:"A", side:"west", y0:761,  y1:879,  ref:"42E–42H"},
+  {id:"B", side:"west", y0:912,  y1:1034, ref:"42H / 1-1D"},
+  {id:"C", side:"west", y0:1034, y1:1156, ref:"1-1D / 3"},
+  {id:"D", side:"west", y0:1371, y1:1486, ref:"9 / 11"},
+  {id:"E", side:"west", y0:1486, y1:1600, ref:"11 / 13"},
+  {id:"F", side:"west", y0:1600, y1:1715, ref:"13 / 15"},
+  {id:"G", side:"west", y0:1748, y1:1859, ref:"17 / 19"},
+  {id:"H", side:"east", y0:650,  y1:786,  ref:"2 / 4"},
+  {id:"I", side:"east", y0:846,  y1:985,  ref:"6 / 8"},
+  {id:"J", side:"east", y0:1030, y1:1158, ref:"10 / 12"},
+  {id:"K", side:"east", y0:1372, y1:1491, ref:"18 / 20"},
+  {id:"L", side:"east", y0:1545, y1:1685, ref:"22 / 24"},
+  {id:"M", side:"east", y0:1745, y1:1861, ref:"26-26B / 28"}
+];
+
+function drawStatic(){
+  const g = document.getElementById('static');
+  const Y0=615, Y1=1930;
+  let s = '';
+  s += `<rect class="stoep" x="${GEO.stoepWestX[0]}" y="${Y0}" width="${GEO.stoepWestX[1]-GEO.stoepWestX[0]}" height="${Y1-Y0}"/>`;
+  s += `<rect class="stoep" x="${GEO.stoepEastX[0]}" y="${Y0}" width="${GEO.stoepEastX[1]-GEO.stoepEastX[0]}" height="${Y1-Y0}"/>`;
+  s += `<rect class="straat" x="${GEO.straatX[0]}" y="${Y0}" width="${GEO.straatX[1]-GEO.straatX[0]}" height="${Y1-Y0}"/>`;
+
+  s += `<rect class="pand pand-clickable" data-huisnr="42E,42F,42G,42H" x="${GEO.pandWestX[0]}" y="${WEST_BLOK.y0}" width="${GEO.pandWestX[1]-GEO.pandWestX[0]}" height="${WEST_BLOK.y1-WEST_BLOK.y0}"/>`;
+  s += `<text class="nr" x="${(GEO.pandWestX[0]+GEO.pandWestX[1])/2}" y="${(WEST_BLOK.y0+WEST_BLOK.y1)/2}" text-anchor="middle">${WEST_BLOK.nr}</text>`;
+  WEST_NRS.forEach((nr,i)=>{
+    const a=WEST_GRENS[i], b=WEST_GRENS[i+1];
+    s += `<rect class="pand pand-clickable" data-huisnr="${nr}" x="${GEO.pandWestX[0]}" y="${a}" width="${GEO.pandWestX[1]-GEO.pandWestX[0]}" height="${b-a}"/>`;
+    s += `<text class="nr" x="${(GEO.pandWestX[0]+GEO.pandWestX[1])/2}" y="${(a+b)/2+7}" text-anchor="middle">${nr}</text>`;
+  });
+  EAST_NRS.forEach((nr,i)=>{
+    const a=EAST_GRENS[i], b=EAST_GRENS[i+1];
+    s += `<rect class="pand pand-clickable" data-huisnr="${nr}" x="${GEO.pandEastX[0]}" y="${a}" width="${GEO.pandEastX[1]-GEO.pandEastX[0]}" height="${b-a}"/>`;
+    s += `<text class="nr" x="${(GEO.pandEastX[0]+GEO.pandEastX[1])/2}" y="${(a+b)/2+7}" text-anchor="middle">${nr}</text>`;
+  });
+
+  BOOM_WEST.forEach(([a,b])=>{
+    s += `<rect class="boom" x="${GEO.vakWestX[0]}" y="${a}" width="${GEO.vakWestX[1]-GEO.vakWestX[0]}" height="${b-a}" rx="4"/>`;
+  });
+  BOOM_EAST.forEach(([a,b])=>{
+    s += `<rect class="boom" x="${GEO.vakEastX[0]}" y="${a}" width="${GEO.vakEastX[1]-GEO.vakEastX[0]}" height="${b-a}" rx="4"/>`;
+  });
+
+  s += `<text class="straatnaam" x="${(GEO.straatX[0]+GEO.straatX[1])/2}" y="1300" text-anchor="middle" transform="rotate(90 ${(GEO.straatX[0]+GEO.straatX[1])/2} 1300)">Groenoordstraat</text>`;
+  g.innerHTML = s;
+}
+
+// Tekent, per vak, een verticaal gestapeld kleurenbalkje dat 100% van de
+// stemmen voor dat vak weergeeft (bovenste laag, zelfde hoogte als het vak).
+function drawResultaten(counts, totaal, horizontal){
+  const g = document.getElementById('resultaten');
+  let s = '';
+  LOCATIONS.forEach(loc=>{
+    const X = loc.side==="west" ? GEO.vakWestX : GEO.vakEastX;
+    const w = X[1]-X[0];
+    const h = loc.y1 - loc.y0;
+    const c = counts[loc.id];
+    if(!c || totaal===0){
+      s += `<rect class="vak-leeg" x="${X[0]}" y="${loc.y0}" width="${w}" height="${h}" rx="3"/>`;
+      s += `<text class="vak-let" x="${(X[0]+X[1])/2}" y="${loc.y0+h/2+6}" text-anchor="middle" fill="#233B4D">${loc.id}</text>`;
+      return;
+    }
+    if(!horizontal){
+      // verticale stapeling: vult het vak zelf van boven naar beneden
+      let yCursor = loc.y0;
+      OPTIONS.forEach(o=>{
+        const n = c[o]||0;
+        const segH = (n/totaal) * h;
+        if(segH>0) s += `<rect x="${X[0]}" y="${yCursor}" width="${w}" height="${segH}" fill="${KLEUR[o]}"/>`;
+        yCursor += segH;
+      });
+      s += `<rect x="${X[0]}" y="${loc.y0}" width="${w}" height="${h}" fill="none" stroke="#233B4D" stroke-width="3" rx="3"/>`;
+    } else {
+      // horizontale verdeling: verticale slabs náást elkaar, passend binnen het vak zelf
+      let xCursor = X[0];
+      OPTIONS.forEach(o=>{
+        const n = c[o]||0;
+        const segW = (n/totaal) * w;
+        if(segW>0) s += `<rect x="${xCursor}" y="${loc.y0}" width="${segW}" height="${h}" fill="${KLEUR[o]}"/>`;
+        xCursor += segW;
+      });
+      s += `<rect x="${X[0]}" y="${loc.y0}" width="${w}" height="${h}" fill="none" stroke="#233B4D" stroke-width="1.5" rx="3"/>`;
+    }
+    s += `<text class="vak-let" x="${(X[0]+X[1])/2}" y="${loc.y0+h/2+6}" text-anchor="middle">${loc.id}</text>`;
+  });
+  g.innerHTML = s;
+}
+
+function parseSubmissions(raw){
+  // Robuust: zoek gewoon elk los, in balans zijnd {...}-object in de tekst,
+  // ongeacht of de "GROENOORDSTRAAT_ENQUETE_JSON"-markerregel er nog staat,
+  // en ongeacht of er komma's of andere tekst tussen de objecten staan.
+  const subs = [];
+  let i = 0;
+  while(i < raw.length){
+    if(raw[i] === '{'){
+      let depth = 0, start = i, end = -1;
+      for(let j=i; j<raw.length; j++){
+        if(raw[j] === '{') depth++;
+        else if(raw[j] === '}'){
+          depth--;
+          if(depth === 0){ end = j; break; }
+        }
+      }
+      if(end === -1) break; // ongesloten object, stop
+      const candidate = raw.slice(start, end+1);
+      try{ subs.push(JSON.parse(candidate)); }
+      catch(e){ /* geen geldig JSON-object, negeren */ }
+      i = end + 1;
+    } else {
+      i++;
+    }
+  }
+  return subs;
+}
+
+function cleanHuisnr(h){
+  return (h||'').trim().replace(/^[^0-9A-Za-z]+/, '');
+}
+// Zelfde sorteerlogica als het enquêteformulier: numeriek op het leidende
+// getal, zodat "1-1D" vóór "2" komt en "26-26B" tussen 24 en 28 in staat.
+function huisnrSortKey(nr){
+  const m = String(nr||'').match(/\d+/);
+  return m ? parseInt(m[0], 10) : 9999;
+}
+
+function analyze(){
+  const errEl = document.getElementById('err');
+  const summaryEl = document.getElementById('summary');
+  errEl.textContent = '';
+  summaryEl.innerHTML = '';
+
+  const raw = document.getElementById('raw').value;
+  const subs = parseSubmissions(raw);
+  if(subs.length === 0){
+    errEl.textContent = t('err_geen_reacties');
+    document.getElementById('printBtn').style.display = 'none';
+    document.getElementById('horizToggleWrap').style.display = 'none';
+    window.__allSubs = null;
+    return;
+  }
+  window.__allSubs = subs;
+  window.__selectedHuisnr = null;
+  renderResults();
+}
+
+// Klik op een huis op de kaart: filter de resultaten tot alleen die woning(en).
+function onPandClick(e){
+  const rect = e.target.closest('[data-huisnr]');
+  if(!rect || !window.__allSubs) return;
+  const nrs = rect.dataset.huisnr;
+  window.__selectedHuisnr = (window.__selectedHuisnr === nrs) ? null : nrs;
+  renderResults();
+}
+
+function renderResults(){
+  if(!window.__allSubs) return;
+  const summaryEl = document.getElementById('summary');
+  const selectedNrs = window.__selectedHuisnr ? window.__selectedHuisnr.split(',') : null;
+
+  // Elke reactie telt gewoon mee — meerdere bewoners van hetzelfde huisnummer
+  // (of helemaal anoniem) mogen allemaal apart reageren, dus geen dedupe.
+  // Bij een actief kaart-filter: alleen reacties van de geselecteerde woning(en).
+  const finalSubs = selectedNrs
+    ? window.__allSubs.filter(s => selectedNrs.includes(cleanHuisnr(s.huisnummer)))
+    : window.__allSubs;
+
+  const totaal = finalSubs.length;
+  const counts = {};
+  const motivaties = {};
+  const suggesties = [];
+  const rijenBekend = [];
+  const rijenAnoniem = [];
+
+  // Elk vak wordt voor élke respondent meegeteld: een niet-ingevuld vak
+  // (geen entry, of keuze=null) telt automatisch mee als "geen mening".
+  finalSubs.forEach((s,idx)=>{
+    const isAnoniem = !s.naam && !s.huisnummer;
+    const wie = [s.naam, s.huisnummer ? `nr. ${cleanHuisnr(s.huisnummer)}` : null].filter(Boolean).join(', ') || t('anoniem');
+    const rijAntwoorden = {};
+    LOCATIONS.forEach(loc=>{
+      const a = (s.antwoorden || {})[loc.id];
+      const keuze = (a && a.keuze) ? a.keuze : "geen mening";
+      rijAntwoorden[loc.id] = {keuze, motivatie: (a && a.motivatie) ? a.motivatie : null};
+      if(!counts[loc.id]) counts[loc.id] = {};
+      counts[loc.id][keuze] = (counts[loc.id][keuze]||0) + 1;
+      if(a && a.motivatie){
+        if(!motivaties[loc.id]) motivaties[loc.id] = [];
+        motivaties[loc.id].push({wie, tekst: a.motivatie});
+      }
+    });
+    if(s.suggesties){
+      suggesties.push({wie, tekst: s.suggesties});
+    }
+    const rij = {label: isAnoniem ? null : wie, huisnr: cleanHuisnr(s.huisnummer), antwoorden: rijAntwoorden, idx};
+    (isAnoniem ? rijenAnoniem : rijenBekend).push(rij);
+  });
+  // Sorteer bekende respondenten op huisnummer (1-1D, 2, 3, ... 26-26B, 28)
+  rijenBekend.sort((a,b)=> huisnrSortKey(a.huisnr) - huisnrSortKey(b.huisnr));
+
+  let html = '';
+
+  if(selectedNrs){
+    html += `<div class="filterbar"><span>${t('filter_actief')} <strong>${window.__selectedHuisnr}</strong> — ${totaal} ${t('stat_verwerkt')}</span>
+      <button type="button" class="no-print" onclick="window.__selectedHuisnr=null;renderResults();">${t('filter_wis')}</button></div>`;
+  }
+  html += `<div class="stat">${totaal} ${t('stat_verwerkt')}</div>`;
+
+  // ---- BLOK 1: plattegrond ----
+  html += `<div class="print-block">`;
+  html += `<h2 class="print-title">${t('blok1_titel')}</h2>`;
+  html += `<p class="hint no-print">${t('klik_huis_hint')}</p>`;
+  html += `<div class="legend">`;
+  OPTIONS.forEach(o=>{
+    html += `<span><span class="sw" style="background:${KLEUR[o]}"></span>${OPT_LABEL[LANG][o]}</span>`;
+  });
+  html += `</div>`;
+  html += `<div class="map-scroll">
+      <svg id="kaart" viewBox="340 610 380 1325" xmlns="http://www.w3.org/2000/svg">
+        <g id="static"></g>
+        <g id="resultaten"></g>
+      </svg>
+    </div>`;
+  html += `</div>`;
+
+  // ---- BLOK 2: tabel ----
+  html += `<div class="print-block">`;
+  html += `<h2 class="print-title">${t('blok2_titel')}</h2>`;
+  html += `<table><tr><th>${t('th_vak')}</th>${OPTIONS.map(o=>`<th style="background:${KLEUR[o]};color:#fff;">${OPT_LABEL[LANG][o]}</th>`).join('')}</tr>`;
+  LOCATIONS.forEach(loc=>{
+    const c = counts[loc.id] || {};
+    html += `<tr><td>${t('vak_prefix')} ${loc.id}</td>${OPTIONS.map(o=>{
+      const n = c[o]||0;
+      const bg = n>0 ? `color-mix(in srgb, ${KLEUR[o]} 30%, white)` : 'transparent';
+      return `<td style="background:${bg};font-weight:${n>0?700:400};">${n}</td>`;
+    }).join('')}</tr>`;
+  });
+  html += `</table>`;
+  html += `</div>`;
+
+  // ---- BLOK 3: per respondent (bekend + anoniem apart) — NIET printen, i.v.m. anonimiteit ----
+  html += `<div class="print-block no-print">`;
+  html += `<h2 class="print-title">${t('blok3_titel')}</h2>`;
+  html += `<p class="hint">${t('per_resp_hint')}</p>`;
+  html += `<p class="hint" style="color:#9C4A3A;">${t('resp_niet_print')}</p>`;
+  html += respondentTable(t('resp_bekend'), rijenBekend, (r,i)=>r.label);
+  html += respondentTable(t('resp_anoniem'), rijenAnoniem, (r,i)=>`${t('anoniem')} ${i+1}`);
+  html += `</div>`;
+
+  // ---- BLOK 4: motivaties + suggesties ----
+  html += `<div class="print-block">`;
+  html += `<h2 class="print-title">${t('blok4_titel')}</h2>`;
+  html += `<p class="hint print-only">${t('print_anoniem_hint')}</p>`;
+  html += `<div class="block-title">${t('block_motivaties')}</div>`;
+  if(Object.keys(motivaties).length === 0){
+    html += `<p style="font-size:.85rem;color:#6b6455;">${t('geen_motivaties')}</p>`;
+  } else {
+    Object.entries(motivaties).forEach(([vid, list])=>{
+      html += `<div style="font-weight:600;font-size:.85rem;margin-top:8px;">${t('vak_prefix')} ${vid}</div><ul class="notes">${list.map(m=>`<li><span class="no-print">${m.wie}: </span>${m.tekst}</li>`).join('')}</ul>`;
+    });
+  }
+
+  html += `<div class="block-title">${t('block_suggesties')}</div>`;
+  if(suggesties.length === 0){
+    html += `<p style="font-size:.85rem;color:#6b6455;">${t('geen_suggesties')}</p>`;
+  } else {
+    html += `<ul class="notes">${suggesties.map(s=>`<li><span class="no-print">${s.wie}: </span>${s.tekst}</li>`).join('')}</ul>`;
+  }
+  html += `</div>`;
+
+  summaryEl.innerHTML = html;
+  drawStatic();
+  document.getElementById('static').removeEventListener('click', onPandClick);
+  document.getElementById('static').addEventListener('click', onPandClick);
+  if(selectedNrs){
+    document.querySelectorAll('[data-huisnr]').forEach(el=>{
+      if(el.dataset.huisnr === window.__selectedHuisnr) el.classList.add('pand-selected');
+    });
+  }
+  window.__lastCounts = counts;
+  window.__lastTotaal = totaal;
+  drawResultaten(counts, totaal, document.getElementById('horizToggle').checked);
+  document.getElementById('printBtn').style.display = '';
+  document.getElementById('horizToggleWrap').style.display = '';
+}
+
+// Bouwt één respondent-tabel: rij = respondent, kolom = vak, cel = keuze
+// (kleur + eerste letter van de vertaalde optie).
+function respondentTable(titel, rijen, labelFn){
+  if(rijen.length === 0){
+    return `<div class="block-title">${titel} (0)</div><p style="font-size:.85rem;color:#6b6455;">—</p>`;
+  }
+  let h = `<div class="block-title">${titel} (${rijen.length})</div>`;
+  h += `<div class="resp-scroll"><table class="resp-table"><tr><th>${t('wie')}</th>`;
+  LOCATIONS.forEach(loc=>{ h += `<th>${loc.id}</th>`; });
+  h += `</tr>`;
+  rijen.forEach((r,i)=>{
+    h += `<tr><td class="resp-wie">${labelFn(r,i)}</td>`;
+    LOCATIONS.forEach(loc=>{
+      const {keuze, motivatie} = r.antwoorden[loc.id];
+      const label = OPT_LABEL[LANG][keuze] || keuze;
+      const titleTxt = motivatie ? `${label}\n${motivatie}` : label;
+      const cls = motivatie ? ' class="heeft-motivatie"' : '';
+      h += `<td style="background:${KLEUR[keuze]};" title="${titleTxt.replace(/"/g,'&quot;')}"${cls}>${OPT_ABBR[keuze]||label[0].toUpperCase()}</td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</table></div>`;
+  return h;
+}
+
+document.getElementById('go').addEventListener('click', analyze);
+document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+document.getElementById('horizToggle').addEventListener('change', e=>{
+  if(window.__lastCounts) drawResultaten(window.__lastCounts, window.__lastTotaal, e.target.checked);
+});
+</script>
+</body>
+</html>
