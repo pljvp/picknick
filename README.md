@@ -9,7 +9,7 @@ Twee kleine webpagina's voor de straat, plus een samenvoegtool voor elk. Alles i
 | Enquête | `index.html` | Bewoners geven per parkeervak (A–M) hun mening over picknicktafels en fietsparkeren |
 | Petitie | `handtekeningen.html` | Bewoners laten naam, adres en paraaf achter om het verzoek te steunen |
 | Enquête samenvoegen | `tools/enquete-samenvoegen.html` | Ontvangen enquêtemails samenvoegen tot één overzicht |
-| Handtekeningen samenvoegen | `tools/handtekeningen-samenvoegen.html` | Ontvangen petitiemails samenvoegen tot één lijst met naam, adres, opmerking en paraaf als plaatje. Printen of bewaren als pdf geeft een kant-en-klare lijst voor de commissie (zaaknummer, hoorzitting, voettekst). Met een vinkje kun je de paraafs onherstelbaar vervagen, voor een privacyvriendelijke versie |
+| Handtekeningen samenvoegen | `tools/handtekeningen-samenvoegen.html` | Ontvangen petitiemails samenvoegen tot één lijst voor de commissie, met kaart |
 
 ```
 index.html                              enquête
@@ -35,7 +35,7 @@ Beide pagina's sturen niets naar een server. Ze openen het e-mailprogramma van d
 
 1. De bezoeker vult naam, straat (vooraf ingevuld), huisnummer en eventueel een opmerking in, en tekent een paraaf.
 2. De pagina valideert de verplichte velden en opent het e-mailprogramma met het bericht, in de taal van de bezoeker (NL of EN). Daarna volgt een bedankscherm met een deellink.
-3. De organisatoren plakken de mails in `tools/handtekeningen-samenvoegen.html`. Dat levert een lijst op, gesorteerd op adres. De tool leest zowel Nederlandse als Engelse veldnamen. Print je de lijst als pdf, dan kun je met het vinkje "Handtekeningen tonen" kiezen tussen leesbare paraafs (voor de commissie) en vervaagde paraafs (om te delen).
+3. De organisatoren plakken de mails in `tools/handtekeningen-samenvoegen.html`. Dat levert een lijst op, gesorteerd op adres, die je als pdf kunt printen. Paraafs zijn naar keuze leesbaar of onherstelbaar vervaagd, en een kaart toont per adres het aantal handtekeningen.
 4. De pagina waarschuwt voor misbruik (zie Privacy).
 
 ### Paraaf → code → paraaf

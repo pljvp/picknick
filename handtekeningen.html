@@ -66,6 +66,7 @@
   .msg { min-height:18px; margin:0 0 16px; font:400 13px/18px var(--sans); color:var(--muted); }
   .msg.err { color:var(--bad); }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row .wide { grid-column:1 / -1; }
   .btn { display:flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 10px; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:600 15px/20px var(--sans); white-space:nowrap; cursor:pointer; }
   .clip { position:relative; margin:0 0 20px; }
   .clipimg { height:200px; overflow:hidden; background:var(--surface); border-radius:var(--radius); }
@@ -225,8 +226,9 @@
       <p class="hint" data-i18n="legal"></p>
       <p class="msg" id="msg" role="alert"></p>
       <div class="row">
-        <button type="button" class="btn" id="clear"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="clear"></span></button>
-        <button type="submit" class="btn primary go" id="submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span data-i18n="submit"></span></button>
+        <button type="submit" class="btn primary go" id="submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg><span data-i18n="submit"></span></button>
+        <button type="button" class="btn primary go" id="wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg><span data-i18n="wa"></span></button>
+        <button type="button" class="btn wide" id="clear"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="clear"></span></button>
       </div>
       <button type="button" class="linkbtn" id="copy" data-i18n="copy"></button>
     </form>
@@ -311,14 +313,14 @@
       req4: 'Help ons met structurele oplossingen voor het fietsenprobleem, niet alleen met handhaving.',
       sign_text: 'Vul hieronder je naam en adres in en zet je paraaf. Woon je met meer mensen? Laat ook de rest van je huishouden tekenen: elke handtekening telt.',
       name: 'Volledige naam', street: 'Straat', housenr: 'Huisnummer', housenr_ph: '14 of 14B', note: 'Opmerking', note_hint: 'Optioneel, maximaal 256 tekens.', legal: 'Let op: een handtekening namaken of andermans gegevens invullen is strafbaar (valsheid in geschrifte, art. 225 Wetboek van Strafrecht).', signature: 'Paraaf', draw: 'Teken hier',
-      clear: 'Opnieuw', submit: 'Versturen',
+      clear: 'Opnieuw', submit: 'Via e-mail', wa: 'Via WhatsApp',
       copy: 'Werkt mailen niet? Kopieer je gegevens en deel via DM',
       ok_copied: 'Gekopieerd. Plak het in een mail naar ' + MAIL_TO + ' of stuur het ons via DM.', err_copy: 'Kopiëren lukte niet op dit toestel.',
       err_missing: 'Nog niet compleet. Vul in: ',
       m_name: 'Naam', m_address: 'Adres', m_note: 'Opmerking', m_time: 'Tijd', m_sig: 'Handtekening (code, niet aanpassen)',
       m_subject: 'Handtekening: picknicktafels en fietsen',
       thx_title: 'Dank je wel',
-      thx_text: 'Je mail-app is geopend met je gegevens. Druk daar nog even op verzenden.',
+      thx_text: 'Je gegevens staan klaar in je mail-app of WhatsApp. Druk daar nog even op verzenden.',
       thx_more: 'Woont er nog iemand met je in huis? Deel de link, dan kan die ook tekenen.',
       thx_share: 'Deel met huisgenoten', thx_copied: 'Link gekopieerd.',
       share_text: 'Teken ook mee voor behoud van onze picknicktafels en fietsen:',
@@ -352,14 +354,14 @@
       req4: 'Help us find structural solutions for the bike problem, not just enforcement.',
       sign_text: 'Enter your name and address below and add your signature. Live with others? Let the rest of your household sign too: every signature counts.',
       name: 'Full name', street: 'Street', housenr: 'House number', housenr_ph: '14 or 14B', note: 'Comment', note_hint: 'Optional, 256 characters at most.', legal: 'Note: forging a signature or filling in someone else’s details is a criminal offence (forgery of documents, art. 225 of the Dutch Criminal Code).', signature: 'Signature', draw: 'Draw here',
-      clear: 'Start over', submit: 'Send',
+      clear: 'Start over', submit: 'By email', wa: 'By WhatsApp',
       copy: 'Email not working? Copy your details and share via DM',
       ok_copied: 'Copied. Paste it into an email to ' + MAIL_TO + ' or send it to us via DM.', err_copy: 'Copying did not work on this device.',
       err_missing: 'Not complete yet. Please fill in: ',
       m_name: 'Name', m_address: 'Address', m_note: 'Comment', m_time: 'Time', m_sig: 'Signature (code, do not change)',
       m_subject: 'Signature: picnic tables and bikes',
       thx_title: 'Thank you',
-      thx_text: 'Your mail app has opened with your details. Press send there to finish.',
+      thx_text: 'Your details are ready in your mail app or WhatsApp. Press send there to finish.',
       thx_more: 'Does anyone else in your household want to sign? Share the link, so they can sign too.',
       thx_share: 'Share with your household', thx_copied: 'Link copied.',
       share_text: 'Sign too, to keep our picnic tables and bikes:',
@@ -595,6 +597,12 @@
     const url = 'mailto:' + MAIL_TO + '?subject=' + encodeURIComponent(t('m_subject')) +
       '&body=' + encodeURIComponent(mailBody(entry));
     window.location.href = url;
+    dlg.close(); resetForm(); openModal($('thx'));
+  });
+
+  $('wa').addEventListener('click', () => {            // WhatsApp opent met het bericht klaar; de bezoeker kiest zelf de ontvanger
+    const entry = collect(); if (!entry) return;
+    window.location.href = 'https://wa.me/?text=' + encodeURIComponent(t('m_subject') + '\n\n' + mailBody(entry));
     dlg.close(); resetForm(); openModal($('thx'));
   });
 
