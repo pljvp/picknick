@@ -591,19 +591,30 @@
     return { name, address, note: clean($('note').value), ts: new Date().toISOString() };
   }
 
+  // Bedankscherm pas tonen als de bezoeker terugkeert uit de mail-app of WhatsApp (of na 4 s als er niets opende)
+  function thanksAfterLaunch() {
+    let hidden = false, done = false;
+    const finish = () => { if (done) return; done = true; document.removeEventListener('visibilitychange', onVis); clearTimeout(timer); dlg.close(); resetForm(); openModal($('thx')); };
+    const onVis = () => { if (document.hidden) hidden = true; else if (hidden) finish(); };
+    const timer = setTimeout(finish, 4000);
+    document.addEventListener('visibilitychange', onVis);
+  }
+
   $('form').addEventListener('submit', ev => {
     ev.preventDefault();
     const entry = collect(); if (!entry) return;
     const url = 'mailto:' + MAIL_TO + '?subject=' + encodeURIComponent(t('m_subject')) +
       '&body=' + encodeURIComponent(mailBody(entry));
     window.location.href = url;
-    dlg.close(); resetForm(); openModal($('thx'));
+    thanksAfterLaunch();
   });
 
-  $('wa').addEventListener('click', () => {            // WhatsApp opent met het bericht klaar; de bezoeker kiest zelf de ontvanger
+  $('wa').addEventListener('click', () => {
     const entry = collect(); if (!entry) return;
-    window.location.href = 'https://wa.me/?text=' + encodeURIComponent(t('m_subject') + '\n\n' + mailBody(entry));
-    dlg.close(); resetForm(); openModal($('thx'));
+    const q = 'text=' + encodeURIComponent(t('m_subject') + '\n\n' + mailBody(entry));
+    // op een telefoon via whatsapp:// (laat bij twee WhatsApps de keuze), anders via wa.me; de bezoeker kiest zelf de ontvanger
+    window.location.href = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'whatsapp://send?' + q : 'https://wa.me/?' + q;
+    thanksAfterLaunch();
   });
 
   $('copy').addEventListener('click', async () => {
