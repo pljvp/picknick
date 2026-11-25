@@ -31,7 +31,8 @@
   .btn { height:44px; padding:0 10px; border:0; border-radius:var(--radius); background:var(--surface); color:var(--ink); font:600 15px/20px var(--sans); white-space:nowrap; cursor:pointer; }
   .btn.primary { background:var(--accent); color:var(--on-accent); }
   #out { margin-top:32px; }
-  .summary { margin:0 0 8px; font:400 14px/20px var(--mono); }
+  .summary { margin:0 0 8px; font:400 14px/20px var(--mono); color:var(--muted); }
+  .summary b { font-weight:700; color:var(--ink); }
   .warn { margin:0 0 8px; font:400 13px/18px var(--sans); color:var(--bad); }
   .scroll { overflow-x:auto; overscroll-behavior-x:contain; }
   table { width:100%; border-collapse:collapse; margin-top:16px; }
@@ -47,13 +48,25 @@
   .maplabel { margin:0 0 6px; font:500 11px/16px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
   .mappart svg { display:block; margin-left:auto; margin-right:auto; height:auto; background:#fff; border-radius:var(--radius); }
   .maplegend { margin:16px 0 8px; font:400 13px/18px var(--sans); color:var(--muted); }
-  .printrow { margin-top:24px; display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .stats { margin:8px 0 16px; padding:24px; background:var(--surface); border-radius:var(--radius); }
+  .stathead, .statrow { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
+  .statrow { margin:8px 0 16px; }
+  .statline { margin:0; font:400 15px/24px var(--sans); color:var(--muted); }
+  .statline b { font-weight:600; color:var(--ink); }
+  .statpct { font:600 20px/24px var(--sans); }
+  .stats .w { display:grid; gap:4px; justify-content:start; }
+  .stats s { display:block; aspect-ratio:1; box-sizing:border-box; background:var(--surface); border:1px solid #d2d2d2; }
+  .stats s.f { background:#d2d2d2; }
+  .printrow { margin-top:24px; display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; }
   .opt { display:flex; align-items:center; gap:10px; font:400 14px/20px var(--sans); cursor:pointer; }
   .opt input { width:20px; height:20px; margin:0; accent-color:var(--accent); }
 
   @media print {
     :root, :root[data-theme=light] { --bg:#fff; --ink:#000; --muted:#555; --line:#bbb; --surface:#fff; }
     .noprint { display:none !important; }
+    .stats { margin:14pt 0 8pt; padding:0; background:none; }
+    .statline { font:400 10pt/14pt var(--sans); }
+    .statpct { font:600 12pt/14pt var(--sans); }
     .wrap { max-width:none; padding:0; }
     h1 { padding-top:0; }
     #out { margin-top:8px; }
@@ -114,7 +127,7 @@
       </table>
     </div>
     <section id="mapblock"></section>
-    <div class="printrow noprint"><button type="button" class="btn primary" id="print" style="padding:0 20px">Print of bewaar als pdf</button><label class="opt"><input type="checkbox" id="legible" checked>Handtekeningen tonen (uit: onherstelbaar vervaagd)</label></div>
+    <div class="printrow noprint"><button type="button" class="btn primary" id="print" style="padding:0 20px">Print of bewaar als pdf</button><label class="opt"><input type="checkbox" id="legible" checked>Handtekeningen tonen</label><label class="opt"><input type="checkbox" id="novotes">Kaart zonder stemmen</label></div>
   </div>
 </div>
 
@@ -271,8 +284,8 @@
   const R_BAY_E = [[645,1153],[1505,1857]], R_BAY_W = [[643,990],[1036,1153],[1505,1745]];
   const R_PIT = [[1154,1237],[1406,1501]], R_PIT_E_SMALL = [[866,893],[1007,1037]];
   const PARTS = [
-    { id:'links', titel:'Links van de kruising', nrs:'Groenoordstraat 1-19, 2-28 en 42H', y0:612, y1:1932, totaal:25, keys:['42H'].concat(WEST.keys, EAST.keys) },
-    { id:'rechts', titel:'Rechts van de kruising', nrs:'Hansenstraat 91 en 93, Groenoordstraat 21-35 en 30-42', y0:612, y1:R0 + 930, totaal:17, keys:['H93','H91'].concat(RIGHT_E.keys, RIGHT_W.keys) }
+    { id:'links', titel:'Links van de kruising (westelijk deel)', deel:'Westelijk deel', adrTotaal:31, nrs:'Groenoordstraat 1-19, 2-28 en 42H', y0:612, y1:1932, totaal:25, keys:['42H'].concat(WEST.keys, EAST.keys) },
+    { id:'rechts', titel:'Rechts van de kruising (oostelijk deel)', deel:'Oostelijk deel', adrTotaal:20, nrs:'Hansenstraat 91 en 93, Groenoordstraat 21-35 en 30-42', y0:612, y1:R0 + 930, totaal:17, keys:['H93','H91'].concat(RIGHT_E.keys, RIGHT_W.keys) }
   ];
 
   // adres -> perceel ("1-1D", "3", "42H", ...) + eigen label (3A, 3B, ...)
@@ -332,7 +345,7 @@
         const x0 = side === 'west' ? G.pandW[0] : G.pandE[0], x1 = side === 'west' ? G.pandW[1] : G.pandE[1];
         sh += rect(x0, y0, x1, y1, '#d2d2d2', '#b4b4b4');
         T.push([side === 'west' ? x0 + 12 : x1 - 12, (y0 + y1) / 2, CORNER[key] ? CORNER[key].txt : key, 400, 17, '#555']);
-        const dots = Object.entries(per[key] || {}).sort((u, v) => coll.compare(u[0], v[0])); if (!dots.length) return;
+        const dots = $('novotes').checked ? [] : Object.entries(per[key] || {}).sort((u, v) => coll.compare(u[0], v[0])); if (!dots.length) return;
         const n = dots.length, xa = side === 'west' ? x0 + 28 : x0, xb = side === 'west' ? x1 : x1 - 28, A = xb - xa, B = y1 - y0 - 8;
         let best = null;
         for (let rows = 1; rows <= n; rows++) {
@@ -373,12 +386,15 @@
     const L = Object.entries(lost);
     PARTS.forEach((part, pi) => {
       const sig = part.keys.reduce((a, k) => a + Object.values(per[k] || {}).reduce((x, y) => x + y, 0), 0);
-      const pan = part.keys.filter(k => per[k]).length;
       const adr = part.keys.reduce((a, k) => a + Object.keys(per[k] || {}).length, 0);
+      const hide = $('novotes').checked, pct = Math.round(adr / part.adrTotaal * 100);
+      const blocks = Array.from({ length: part.adrTotaal }, (_, i) => '<s' + (i < adr ? ' class="f"' : '') + '></s>').join('');
+      const tools = part.id === 'links' ? 'Bruin = picknicktafel (4), blauwe streepjes = fietsenrek (ca. 16 fietsen).' : '';
+      const legend = (hide ? '' : 'Zwarte stip = één adres, het getal is het aantal handtekeningen van dat adres. Bij meerdere adressen op één perceel (appartementen) staat naast elke stip het huisnummer.') + (hide || !tools ? '' : ' ') + tools;
       html += '<div class="mappart"><h2 class="maptitle">' + part.titel + '</h2>' +
-        '<div class="maplabel">' + part.nrs + ' · ' + plural(sig, 'handtekening', 'handtekeningen') + ' · ' + plural(adr, 'adres', 'adressen') + ' · ' + Math.round(pan / part.totaal * 100) + '% getekend</div>' + buildPart(part) +
-        '<p class="maplegend">Zwarte stip = één adres, het getal is het aantal handtekeningen van dat adres. Bij meerdere adressen op één perceel (appartementen) staat naast elke stip het huisnummer.' +
-        (part.id === 'links' ? ' Bruin = picknicktafel (4), blauwe streepjes = fietsenrek (ca. 16 fietsen).' : '') + '</p>' +
+        '<div class="maplabel">' + part.nrs + '</div>' + buildPart(part) +
+        (legend ? '<p class="maplegend">' + legend + '</p>' : '') +
+        '<div class="stats"><div class="stathead"><span class="label">' + part.deel + '</span><span class="label">getekend</span></div><div class="statrow"><p class="statline"><b>' + sig + '</b> handtekeningen · <b>' + adr + '</b> van <b>' + part.adrTotaal + '</b> adressen</p><span class="statpct">' + pct + '%</span></div><div class="w" style="grid-template-columns:repeat(' + part.adrTotaal + ',minmax(0,18px))">' + blocks + '</div></div>' +
         (pi === PARTS.length - 1 && L.length ? '<p class="warn">Niet op de kaart (adres niet herkend): ' + L.map(([a, n]) => esc2(a) + ' (' + n + ')').join(', ') + '.</p>' : '') + '</div>';
     });
     $('mapblock').innerHTML = html;
@@ -403,7 +419,7 @@
     });
 
     const addrs = new Set(list.map(e => norm(e.address)).filter(Boolean));
-    $('summary').textContent = plural(list.length, 'handtekening', 'handtekeningen') + ' · ' + plural(addrs.size, 'adres', 'adressen');
+    $('summary').innerHTML = '<b>' + list.length + '</b> ' + (list.length === 1 ? 'handtekening' : 'handtekeningen') + ' · <b>' + addrs.size + '</b> ' + (addrs.size === 1 ? 'adres' : 'adressen');
     const w = [];
     if (nosig) w.push(plural(nosig, 'paraaf', 'paraafs') + ' niet leesbaar: controleer de mail zelf.');
     if (!list.length) w.push('Geen handtekeningen gevonden. Elke mail begint met "Naam:" of "Name:".');
@@ -416,6 +432,7 @@
   $('go').addEventListener('click', run);
   $('clear').addEventListener('click', () => { $('in').value = ''; $('out').hidden = true; $('in').focus(); });
   $('legible').addEventListener('change', showSigs);
+  $('novotes').addEventListener('change', run);
   $('print').addEventListener('click', () => window.print());
 })();
 </script>
